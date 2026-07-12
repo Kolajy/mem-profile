@@ -10,6 +10,7 @@ license = "MIT"
 libc = "0.2"
 ctrlc = { version = "3.4", features = ["termination"] }
 backtrace = { version = "0.3", optional = true }
+inferno = { version = "0.12.7", default-features = false }
 
 [features]
 default = ["capture-backtrace"]
