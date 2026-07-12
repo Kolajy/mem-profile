@@ -10,8 +10,8 @@ fn test_allocator_stats_tracking() {
     let initial_deallocs = ALLOC.deallocation_count();
     let initial_bytes = ALLOC.active_bytes();
 
-    // Allocate a vector of 1024 bytes
-    let data: Vec<u8> = vec![42; 1024];
+    // Allocate a vector of 102400 bytes
+    let data: Vec<u8> = vec![42; 102400];
 
     // Statistics should reflect the new allocation
     let after_alloc_count = ALLOC.allocation_count();
@@ -24,8 +24,8 @@ fn test_allocator_stats_tracking() {
         after_alloc_count
     );
     assert!(
-        after_alloc_bytes >= initial_bytes + 1024,
-        "Expected active bytes to increase by at least 1024. Before: {}, After: {}",
+        after_alloc_bytes >= initial_bytes + 100_000,
+        "Expected active bytes to increase by at least 100,000. Before: {}, After: {}",
         initial_bytes,
         after_alloc_bytes
     );
