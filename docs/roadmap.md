@@ -17,7 +17,7 @@ graph TD
 
 | Phase | Title | Description | Target Status |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | Core Allocator MVP | Custom allocator wrapper, stats tracking, reentrancy guards | 🛠️ In Progress |
+| **Phase 1** | Core Allocator MVP | Custom allocator wrapper, stats tracking, reentrancy guards | ✅ Completed |
 | **Phase 2** | Backtraces & Registry | Sharded pointer registry, lazy symbolication, leak dump | 📋 Planned |
 | **Phase 3** | CLI & Snapshots | Signal handlers, runtime snapshots, CLI runner | 📋 Planned |
 | **Phase 4** | Visualizations & Optimization | `pprof` export, flamegraphs, performance tuning | 📋 Planned |
@@ -28,11 +28,11 @@ graph TD
 
 ### Phase 1: Core Allocator MVP
 Focuses on intercepting memory allocation safely without causing program crashes or infinite loops.
-- [ ] Create `ProfilingAllocator` struct wrapping any inner `GlobalAlloc`.
-- [ ] Implement robust **reentrancy prevention** using thread-local storage flags (`Cell<bool>`).
-- [ ] Maintain atomic global counters for `active_bytes`, `total_allocations`, and `total_deallocations`.
-- [ ] Expose basic programmatic access to statistics (e.g., `mem_profile::active_bytes()`).
-- [ ] Add integration tests verify tracking under basic allocation patterns (Box, Vec).
+- [x] Create `ProfilingAllocator` struct wrapping any inner `GlobalAlloc`.
+- [x] Implement robust **reentrancy prevention** using thread-local storage flags (`Cell<bool>`).
+- [x] Maintain atomic global counters for `active_bytes`, `total_allocations`, and `total_deallocations`.
+- [x] Expose basic programmatic access to statistics (e.g., `mem_profile::active_bytes()`).
+- [x] Add integration tests verify tracking under basic allocation patterns (Box, Vec).
 
 ### Phase 2: Backtraces & Registry
 Introduces location tracking to find *where* memory is being allocated.
