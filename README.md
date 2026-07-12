@@ -1,59 +1,35 @@
 # mem-profile 🧠📊
 
-A high-performance, developer-friendly memory profiling utility and custom global allocator for Rust applications. `mem-profile` helps you track heap allocations, detect memory leaks, identify hot allocation paths, and visualize memory usage with minimal runtime overhead.
+A high-performance, developer-friendly terminal-based memory profiling utility and custom global allocator for Rust applications. `mem-profile` helps you track heap allocations, detect memory leaks, identify hot allocation paths, and visualize memory usage with minimal runtime overhead.
 
 Designed with cross-platform compatibility in mind, and optimized for macOS/Linux developer environments.
 
+Our ultimate vision is for `mem-profile` to be packaged as a Homebrew core formula (`brew install mem-profile`), serving as the go-to terminal-based memory visualizer for developers.
+
 ---
 
-## Key Features
+## 🚀 Key Features
 
 - **`#[global_allocator]` Hooking**: A drop-in custom allocator (`ProfilingAllocator`) wrapper that intercepts all heap allocations and deallocations.
-- **Allocation Backtraces**: Optional capturing of call stacks for active allocations using lock-free data structures to identify the exact line of code causing memory growth.
-- **Leak Detection**: Automatic reporting of un-deallocated memory upon program termination, complete with allocation backtraces and size metrics.
-- **pprof & Flamegraph Integration**: Export profiles in pprof-compatible format or generate interactive SVGs to visualize memory hogs.
-- **Threshold Alerts**: Configure runtime callbacks that trigger when memory consumption exceeds user-defined thresholds (ideal for daemon health monitoring).
-- **Zero-Cost compilation**: Toggle memory profiling completely off using cargo features to ensure zero overhead in production.
+- **Allocation Backtraces**: Capture raw call stacks at allocation time using thread-safe, sharded data structures to identify the exact line of code causing memory leaks.
+- **Leak Detection**: Automatic reporting of un-deallocated memory upon program termination, complete with lazy symbolication and size metrics.
+- **Signal-triggered Snapshots**: Capture heap snapshots at runtime programmatically or on-demand via Unix signals (`SIGUSR1`/`SIGUSR2`).
+- **pprof & Flamegraph Export**: Export profiles in pprof-compatible format or generate interactive SVGs directly.
+- **Threshold Alerts**: Trigger runtime callbacks when allocation operations take too long or when memory consumption breaches defined limits.
+- **Terminal UI (TUI) & ASCII Graphing**: Run external commands directly under profiling and view interactive, real-time timeline graphs in your console.
 
 ---
 
-## Quick Start
+## 📦 Homebrew Ready Vision
 
-### 1. Add Dependency
-
-Add `mem-profile` to your `Cargo.toml`:
-
-```toml
-[dependencies]
-mem-profile = "0.1.0"
-```
-
-### 2. Register the Allocator
-
-Wrap your existing allocator (e.g., `std::alloc::System` or `jemallocator`) in your `main.rs` or `lib.rs`:
-
-```rust
-use mem_profile::ProfilingAllocator;
-use std::alloc::System;
-
-#[global_allocator]
-static ALLOCATOR: ProfilingAllocator<System> = ProfilingAllocator::new(System);
-
-fn main() {
-    // Initialize profiling session
-    let _guard = mem_profile::init();
-
-    // Your application code here
-    let mut data = Vec::new();
-    for i in 0..10000 {
-        data.push(format!("allocation-{}", i));
-    }
-} // Leak detection reports here if guard goes out of scope and memory remains allocated
-```
+To meet the high standards for inclusion as a core Homebrew package:
+1. **Interactive TUI Dashboard**: We are building a real-time, interactive terminal dashboard (utilizing `ratatui`) to view memory growth timelines, active allocation stack trees, and flamegraphs inside the terminal window.
+2. **Zero Runtime Dependencies**: The CLI compiles to a statically linked binary with zero external runtime dependencies on both macOS and Linux.
+3. **Cross-Platform Release Automation**: Statically linked pre-compiled releases built automatically via GitHub Actions for Apple Silicon/Intel macOS and Linux.
 
 ---
 
-## Project Structure
+## 🛠️ Project Structure
 
 ```
 mem-profile/
@@ -63,20 +39,20 @@ mem-profile/
 │   ├── lib.rs            # Core allocator hook and tracking structures
 │   ├── allocator.rs      # ProfilingAllocator implementation
 │   ├── backtrace.rs      # Callstack capturing & symbolication
-│   └── report.rs         # Reporting engines (JSON, pprof, text summaries)
+│   ├── report.rs         # Reporting engines (JSON, text summaries)
+│   ├── snapshot.rs       # Disk-based snapshots & UNIX signaling
+│   ├── pprof.rs          # pprof format serialization
+│   ├── flamegraph.rs     # SVG flamegraph generator
+│   ├── alert.rs          # Memory threshold alerts & performance callbacks
+│   └── bin/
+│       └── mem-profile-cli.rs  # CLI command runner wrapper
 ├── docs/                 # Extended documentation
 │   ├── planning.md       # Architectural decisions & implementation details
 │   └── roadmap.md        # Feature phases & milestones
-└── examples/             # Code examples showing library usage
+└── tests/                # Integration test suites
 ```
 
 ---
-
-## Documentation & Roadmap
-
-For deep dives into project architecture and development planning, please refer to:
-* **[Planning & Architecture Guide](docs/planning.md)**: Design choices, lock-free tracking, and backtracesymbolication.
-* **[Development Roadmap](docs/roadmap.md)**: Phased milestones, timeline, and feature goals.
 
 ## License
 

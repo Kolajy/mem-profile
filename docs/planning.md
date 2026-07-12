@@ -11,6 +11,7 @@ This document details the architectural layout, core engineering challenges, des
 - **Thread Safety**: Intercepting allocations from concurrent threads safely with high throughput (low contention lock-free structures or thread-local buffers).
 - **Portability**: Support macOS and Linux natively, utilizing standard Rust features where possible.
 - **Developer Ergonomics**: Simple drop-in setup with cargo features and cargo subcommand integration.
+- **Homebrew Ready**: Standalone binary packaging suitable for Homebrew core formula requirements (`brew install mem-profile`).
 
 ---
 
@@ -27,7 +28,7 @@ When the allocator intercepts a call (e.g., `alloc`), it needs to write to a tra
 Multiple threads allocating simultaneously could bottle up on a global mutex protecting the active allocation map.
 
 **Mitigation**:
-- **Sharded Maps / Lock-Free Maps**: Use a sharded map structure (e.g., `dashmap` or a custom atomic-swapped lock-free array) to distribute locks across different buckets based on the pointer address.
+- **Sharded Maps**: Use a sharded map structure (a const array of Mutex/HashMap protected by a `OnceLock` for safe initialization) to distribute locks across different buckets based on pointer addresses.
 - **Thread-Local Aggregation**: Accumulate allocation stats in thread-local storage (TLS) and periodically flush or aggregate them to a central collector, reducing the lock frequency on high-frequency allocation paths.
 
 ### Challenge C: Fast Backtrace Capture
@@ -35,7 +36,7 @@ Capturing and symbolicating backtraces is highly expensive. Symbolicating (conve
 
 **Mitigation**:
 - **Lazy Symbolication**: Only capture raw instruction pointers (`*mut c_void`) during the execution phase. Defer symbolication until the report generation phase (e.g., on program exit or profiling dump trigger).
-- **Fast Unwinding**: Use platform-optimized unwinding library calls (via `backtrace::trace_unsymbolized` or frame-pointer unwinding if compile options allow).
+- **Fast Unwinding**: Use platform-optimized unwinding library calls (via `backtrace::trace` or frame-pointer unwinding if compile options allow).
 
 ---
 
@@ -46,9 +47,9 @@ Exposes the `GlobalAlloc` trait. Implements:
 ```rust
 pub struct ProfilingAllocator<A: GlobalAlloc> {
     inner: A,
-    // Atomic counters for total/active allocation sizes
     active_bytes: AtomicUsize,
     allocation_count: AtomicUsize,
+    deallocation_count: AtomicUsize,
 }
 ```
 
@@ -64,24 +65,30 @@ pub struct AllocationMetadata {
 
 ### Allocation Registry
 A global registry that holds active allocations, mapped from `*mut u8` (allocation pointer) to `AllocationMetadata`.
-It will utilize a sharded lock design to scale with CPU cores:
+It utilizes a sharded lock design to scale with CPU cores:
 ```rust
-struct Registry {
-    // 64 or 128 shards to minimize lock contention
-    shards: [Mutex<HashMap<usize, AllocationMetadata>>; SHARD_COUNT],
+pub struct Registry {
+    shards: OnceLock<[Mutex<HashMap<usize, AllocationMetadata>>; SHARD_COUNT]>,
 }
 ```
 
 ---
 
-## 4. Interface and Output Formats
+## 4. Homebrew & Terminal UI (TUI) Vision
 
-### Library API
-- `init()`: Starts tracking allocations, returns a guard that triggers leak detection on drop.
-- `dump_to_file(path: &Path)`: Serializes current heap profile.
-- `reset()`: Resets all active allocation counters and maps.
+To prepare the project to become a core Homebrew package (`brew install mem-profile`), we must build a world-class Terminal User Interface (TUI) and release pipeline.
 
-### Export Formats
-1. **JSON Summary**: Simple list of active allocations, cumulative sizes, and leak reports.
-2. **pprof Protocol Buffer**: Binary file format compatible with Google's `pprof` tool, enabling analysis in existing visualization web engines.
-3. **Flamegraph SVG**: Folded stack format for rendering SVG flamegraphs directly.
+### Terminal UI (TUI) Engine
+Instead of just printing a static graph at termination, `mem-profile` will feature a real-time, interactive dashboard inside the terminal (using `ratatui` or similar TUI layouts):
+- **Live RSS Timeline**: A real-time terminal chart graphing the process's physical memory footprint.
+- **Allocations Table**: An interactive table listing top memory-consuming call stacks sorted by size or allocation count.
+- **Flamegraph Viewer**: An interactive ASCII/block flamegraph rendering directly in the terminal window.
+- **Control panel**: Shortcuts to manually trigger snapshots, dump reports, or pause profiling.
+
+### Release & Packaging Strategy
+1. **Zero External Runtime Dependencies**: Ensure the CLI relies only on standard system libraries (`libc`) and contains statically linked Rust dependencies, meeting the strict requirements of Homebrew Formula packaging.
+2. **Pre-compiled Binary Releases**: Setup GitHub Actions to build statically linked release binaries for:
+   - `x86_64-apple-darwin` (macOS Intel)
+   - `aarch64-apple-darwin` (macOS Apple Silicon)
+   - `x86_64-unknown-linux-gnu` (Linux)
+3. **Formula Tap**: Maintain a custom Homebrew Tap `Kolajy/homebrew-mem-profile` as a staging ground before proposing the formula to Homebrew core.
