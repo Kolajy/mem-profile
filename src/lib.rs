@@ -1,6 +1,7 @@
 pub mod alert;
 pub mod allocator;
 pub mod backtrace;
+pub mod cli;
 pub mod flamegraph;
 pub mod pprof;
 pub mod report;
