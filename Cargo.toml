@@ -1,0 +1,17 @@
+[package]
+name = "mem-profile"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jay <kolajy94@gmail.com>"]
+description = "A high-performance memory profiling utility and custom global allocator for Rust."
+license = "MIT"
+
+[dependencies]
+backtrace = { version = "0.3", optional = true }
+
+[features]
+default = ["capture-backtrace"]
+capture-backtrace = ["dep:backtrace"]
+
+[dev-dependencies]
+# Dependencies for testing
