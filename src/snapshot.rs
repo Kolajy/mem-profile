@@ -1,11 +1,11 @@
-use std::path::Path;
+use crate::allocator::REGISTRY;
+use crate::backtrace::symbolicate_frames;
 use std::fs::File;
 use std::io::Write;
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
-use crate::allocator::REGISTRY;
-use crate::backtrace::symbolicate_frames;
 
 static SNAPSHOT_SIGUSR1: AtomicBool = AtomicBool::new(false);
 static SNAPSHOT_SIGUSR2: AtomicBool = AtomicBool::new(false);
@@ -24,16 +24,14 @@ pub fn setup_signal_handlers() {
         libc::signal(libc::SIGUSR2, handle_sigusr2 as *const () as usize);
     }
 
-    thread::spawn(move || {
-        loop {
-            if SNAPSHOT_SIGUSR1.swap(false, Ordering::SeqCst) {
-                dump_to_file(Path::new("snapshot_sigusr1.txt"));
-            }
-            if SNAPSHOT_SIGUSR2.swap(false, Ordering::SeqCst) {
-                dump_to_file(Path::new("snapshot_sigusr2.txt"));
-            }
-            thread::sleep(Duration::from_millis(100));
+    thread::spawn(move || loop {
+        if SNAPSHOT_SIGUSR1.swap(false, Ordering::SeqCst) {
+            dump_to_file(Path::new("snapshot_sigusr1.txt"));
         }
+        if SNAPSHOT_SIGUSR2.swap(false, Ordering::SeqCst) {
+            dump_to_file(Path::new("snapshot_sigusr2.txt"));
+        }
+        thread::sleep(Duration::from_millis(100));
     });
 }
 

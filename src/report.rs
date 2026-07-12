@@ -1,10 +1,10 @@
 use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
+use inferno::flamegraph::{from_reader, Options};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Cursor;
 use std::path::Path;
-use inferno::flamegraph::{from_reader, Options};
-use std::collections::HashMap;
 
 /// Formats and prints a leak report to stderr.
 pub fn print_leak_report() {

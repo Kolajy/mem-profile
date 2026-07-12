@@ -1,9 +1,9 @@
 use clap::Parser;
-use std::process::{Command, Stdio, exit};
-use std::time::Duration;
 use std::fs;
+use std::process::{exit, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::Duration;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
