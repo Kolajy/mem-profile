@@ -18,7 +18,7 @@ graph TD
 | Phase | Title | Description | Target Status |
 | :--- | :--- | :--- | :--- |
 | **Phase 1** | Core Allocator MVP | Custom allocator wrapper, stats tracking, reentrancy guards | ✅ Completed |
-| **Phase 2** | Backtraces & Registry | Sharded pointer registry, lazy symbolication, leak dump | 📋 Planned |
+| **Phase 2** | Backtraces & Registry | Sharded pointer registry, lazy symbolication, leak dump | ✅ Completed |
 | **Phase 3** | CLI & Snapshots | Signal handlers, runtime snapshots, CLI runner | 📋 Planned |
 | **Phase 4** | Visualizations & Optimization | `pprof` export, flamegraphs, performance tuning | 📋 Planned |
 
@@ -36,11 +36,11 @@ Focuses on intercepting memory allocation safely without causing program crashes
 
 ### Phase 2: Backtraces & Registry
 Introduces location tracking to find *where* memory is being allocated.
-- [ ] Implement sharded mutex hash maps to registry pointers to metadata.
-- [ ] Capture raw backtrace pointers at allocation time (using `backtrace` crate without symbolication).
-- [ ] Add symbolic indexing on program exit (lazy symbolication) to translate frame pointers to file/line/function names.
-- [ ] Build a leak detection reporter that scans the registry on shutdown and formats un-deallocated frames.
-- [ ] Introduce a clean up filter to omit `mem-profile` internal frame calls from reports.
+- [x] Implement sharded mutex hash maps to registry pointers to metadata.
+- [x] Capture raw backtrace pointers at allocation time (using `backtrace` crate without symbolication).
+- [x] Add symbolic indexing on program exit (lazy symbolication) to translate frame pointers to file/line/function names.
+- [x] Build a leak detection reporter that scans the registry on shutdown and formats un-deallocated frames.
+- [x] Introduce a clean up filter to omit `mem-profile` internal frame calls from reports.
 
 ### Phase 3: CLI Subcommand & Snapshots
 Makes profiling interactive and usable for external binaries.
