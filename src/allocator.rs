@@ -227,8 +227,10 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
                     if new_ptr == ptr {
                         // Resized in place
                         if new_size > old_size {
-                            let current = self.active_bytes
-                                .fetch_add(new_size - old_size, Ordering::SeqCst) + (new_size - old_size);
+                            let current = self
+                                .active_bytes
+                                .fetch_add(new_size - old_size, Ordering::SeqCst)
+                                + (new_size - old_size);
                             crate::alert::check_memory_threshold(current);
                         } else {
                             self.active_bytes
@@ -238,7 +240,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
                     } else {
                         // Memory block was moved
                         self.active_bytes.fetch_sub(old_size, Ordering::SeqCst);
-                        let current = self.active_bytes.fetch_add(new_size, Ordering::SeqCst) + new_size;
+                        let current =
+                            self.active_bytes.fetch_add(new_size, Ordering::SeqCst) + new_size;
                         crate::alert::check_memory_threshold(current);
 
                         let old_meta = REGISTRY.remove(ptr as usize);
