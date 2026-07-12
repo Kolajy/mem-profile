@@ -133,13 +133,23 @@ impl<A: GlobalAlloc> ProfilingAllocator<A> {
 
 unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        let start = if crate::alert::is_audit_enabled() {
+            Some(Instant::now())
+        } else {
+            None
+        };
         let ptr = self.inner.alloc(layout);
         if !ptr.is_null() {
             IN_ALLOCATOR.with(|in_alloc| {
                 if !in_alloc.get() {
                     in_alloc.set(true);
+
+                    if let Some(start_time) = start {
+                        crate::alert::check_performance_audit(start_time.elapsed());
+                    }
                     let size = layout.size();
-                    self.active_bytes.fetch_add(size, Ordering::SeqCst);
+                    let current = self.active_bytes.fetch_add(size, Ordering::SeqCst) + size;
+                    crate::alert::check_memory_threshold(current);
                     self.allocation_count.fetch_add(1, Ordering::SeqCst);
 
                     let frames = crate::backtrace::capture_raw_backtrace();
@@ -169,13 +179,23 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
     }
 
     unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+        let start = if crate::alert::is_audit_enabled() {
+            Some(Instant::now())
+        } else {
+            None
+        };
         let ptr = self.inner.alloc_zeroed(layout);
         if !ptr.is_null() {
             IN_ALLOCATOR.with(|in_alloc| {
                 if !in_alloc.get() {
                     in_alloc.set(true);
+
+                    if let Some(start_time) = start {
+                        crate::alert::check_performance_audit(start_time.elapsed());
+                    }
                     let size = layout.size();
-                    self.active_bytes.fetch_add(size, Ordering::SeqCst);
+                    let current = self.active_bytes.fetch_add(size, Ordering::SeqCst) + size;
+                    crate::alert::check_memory_threshold(current);
                     self.allocation_count.fetch_add(1, Ordering::SeqCst);
 
                     let frames = crate::backtrace::capture_raw_backtrace();
@@ -189,17 +209,27 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
     }
 
     unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+        let start = if crate::alert::is_audit_enabled() {
+            Some(Instant::now())
+        } else {
+            None
+        };
         let new_ptr = self.inner.realloc(ptr, layout, new_size);
         if !new_ptr.is_null() {
             IN_ALLOCATOR.with(|in_alloc| {
                 if !in_alloc.get() {
                     in_alloc.set(true);
+
+                    if let Some(start_time) = start {
+                        crate::alert::check_performance_audit(start_time.elapsed());
+                    }
                     let old_size = layout.size();
                     if new_ptr == ptr {
                         // Resized in place
                         if new_size > old_size {
-                            self.active_bytes
-                                .fetch_add(new_size - old_size, Ordering::SeqCst);
+                            let current = self.active_bytes
+                                .fetch_add(new_size - old_size, Ordering::SeqCst) + (new_size - old_size);
+                            crate::alert::check_memory_threshold(current);
                         } else {
                             self.active_bytes
                                 .fetch_sub(old_size - new_size, Ordering::SeqCst);
@@ -208,7 +238,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
                     } else {
                         // Memory block was moved
                         self.active_bytes.fetch_sub(old_size, Ordering::SeqCst);
-                        self.active_bytes.fetch_add(new_size, Ordering::SeqCst);
+                        let current = self.active_bytes.fetch_add(new_size, Ordering::SeqCst) + new_size;
+                        crate::alert::check_memory_threshold(current);
 
                         let old_meta = REGISTRY.remove(ptr as usize);
                         let frames = old_meta
