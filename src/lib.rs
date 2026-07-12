@@ -1,19 +1,21 @@
 pub mod allocator;
+pub mod backtrace;
+pub mod report;
 
 pub use allocator::ProfilingAllocator;
 
 /// A session guard that can be used to control the lifetime of memory tracking.
-/// In subsequent phases, dropping this guard will trigger automatic leak detection.
+/// When dropped, this guard triggers automatic leak detection and prints a report.
 pub struct ProfilerGuard;
 
 impl Drop for ProfilerGuard {
     fn drop(&mut self) {
-        // Output shutdown report/leak report here in later phases.
+        report::print_leak_report();
     }
 }
 
 /// Initializes the global profiler session.
-/// Returns a `ProfilerGuard` which triggers exit reports on drop.
+/// Returns a `ProfilerGuard` which triggers leak reports on drop.
 pub fn init() -> ProfilerGuard {
     ProfilerGuard
 }

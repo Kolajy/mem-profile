@@ -1,12 +1,100 @@
 use std::alloc::{GlobalAlloc, Layout};
 use std::cell::Cell;
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Mutex, OnceLock};
+use std::time::Instant;
 
 thread_local! {
     // Thread-local variable to prevent recursive allocator interception.
     // Const initialization ensures no dynamic allocation on first access.
-    static IN_ALLOCATOR: Cell<bool> = const { Cell::new(false) };
+    pub(crate) static IN_ALLOCATOR: Cell<bool> = const { Cell::new(false) };
 }
+
+pub struct AllocationMetadata {
+    pub size: usize,
+    pub timestamp: Instant,
+    pub backtrace: Vec<*mut std::ffi::c_void>,
+}
+
+// Manually implement Send and Sync since raw pointers in backtrace Vec are not Send/Sync.
+unsafe impl Send for AllocationMetadata {}
+unsafe impl Sync for AllocationMetadata {}
+
+const SHARD_COUNT: usize = 16;
+
+#[derive(Default)]
+pub struct Registry {
+    shards: OnceLock<[Mutex<HashMap<usize, AllocationMetadata>>; SHARD_COUNT]>,
+}
+
+impl Registry {
+    pub const fn new() -> Self {
+        Self {
+            shards: OnceLock::new(),
+        }
+    }
+
+    pub fn get_shards(&self) -> &[Mutex<HashMap<usize, AllocationMetadata>>; SHARD_COUNT] {
+        self.shards.get_or_init(|| {
+            [
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+                Mutex::new(HashMap::new()),
+            ]
+        })
+    }
+
+    pub fn insert(&self, ptr: usize, size: usize, backtrace: Vec<*mut std::ffi::c_void>) {
+        let shard_idx = ptr % SHARD_COUNT;
+        let shards = self.get_shards();
+        if let Ok(mut shard) = shards[shard_idx].lock() {
+            shard.insert(
+                ptr,
+                AllocationMetadata {
+                    size,
+                    timestamp: Instant::now(),
+                    backtrace,
+                },
+            );
+        }
+    }
+
+    pub fn remove(&self, ptr: usize) -> Option<AllocationMetadata> {
+        let shard_idx = ptr % SHARD_COUNT;
+        let shards = self.get_shards();
+        if let Ok(mut shard) = shards[shard_idx].lock() {
+            shard.remove(&ptr)
+        } else {
+            None
+        }
+    }
+
+    pub fn update_size(&self, ptr: usize, new_size: usize) {
+        let shard_idx = ptr % SHARD_COUNT;
+        let shards = self.get_shards();
+        if let Ok(mut shard) = shards[shard_idx].lock() {
+            if let Some(meta) = shard.get_mut(&ptr) {
+                meta.size = new_size;
+            }
+        }
+    }
+}
+
+pub static REGISTRY: Registry = Registry::new();
 
 /// A wrapper allocator that profiles memory usage metrics.
 pub struct ProfilingAllocator<A: GlobalAlloc> {
@@ -53,6 +141,10 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
                     let size = layout.size();
                     self.active_bytes.fetch_add(size, Ordering::SeqCst);
                     self.allocation_count.fetch_add(1, Ordering::SeqCst);
+
+                    let frames = crate::backtrace::capture_raw_backtrace();
+                    REGISTRY.insert(ptr as usize, size, frames);
+
                     in_alloc.set(false);
                 }
             });
@@ -66,8 +158,11 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
             if !in_alloc.get() {
                 in_alloc.set(true);
                 let size = layout.size();
-                self.active_bytes.fetch_sub(size, Ordering::SeqCst);
-                self.deallocation_count.fetch_add(1, Ordering::SeqCst);
+                let removed = REGISTRY.remove(ptr as usize);
+                if removed.is_some() {
+                    self.active_bytes.fetch_sub(size, Ordering::SeqCst);
+                    self.deallocation_count.fetch_add(1, Ordering::SeqCst);
+                }
                 in_alloc.set(false);
             }
         });
@@ -82,6 +177,10 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
                     let size = layout.size();
                     self.active_bytes.fetch_add(size, Ordering::SeqCst);
                     self.allocation_count.fetch_add(1, Ordering::SeqCst);
+
+                    let frames = crate::backtrace::capture_raw_backtrace();
+                    REGISTRY.insert(ptr as usize, size, frames);
+
                     in_alloc.set(false);
                 }
             });
@@ -105,10 +204,17 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
                             self.active_bytes
                                 .fetch_sub(old_size - new_size, Ordering::SeqCst);
                         }
+                        REGISTRY.update_size(ptr as usize, new_size);
                     } else {
                         // Memory block was moved
                         self.active_bytes.fetch_sub(old_size, Ordering::SeqCst);
                         self.active_bytes.fetch_add(new_size, Ordering::SeqCst);
+
+                        let old_meta = REGISTRY.remove(ptr as usize);
+                        let frames = old_meta
+                            .map(|m| m.backtrace)
+                            .unwrap_or_else(crate::backtrace::capture_raw_backtrace);
+                        REGISTRY.insert(new_ptr as usize, new_size, frames);
                     }
                     in_alloc.set(false);
                 }

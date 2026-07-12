@@ -64,3 +64,12 @@ fn test_allocator_stats_tracking() {
         after_dealloc_count, after_dealloc_bytes
     );
 }
+
+#[test]
+fn test_leak_reporting() {
+    {
+        let _guard = mem_profile::init();
+        let leached = Box::new(42);
+        std::mem::forget(leached);
+    }
+}
