@@ -5,7 +5,8 @@ use std::alloc::System;
 static ALLOC: ProfilingAllocator<System> = ProfilingAllocator::new(System);
 
 #[test]
-fn test_allocator_stats_tracking() {
+fn test_allocator_suite() {
+    // 1. Run the allocator statistics tracking test
     let initial_allocs = ALLOC.allocation_count();
     let initial_deallocs = ALLOC.deallocation_count();
     let initial_bytes = ALLOC.active_bytes();
@@ -30,7 +31,7 @@ fn test_allocator_stats_tracking() {
         after_alloc_bytes
     );
 
-    // Let's print out the values to console during test execution
+    // Print values to console during test execution
     println!(
         "Initial: Allocs={}, Bytes={}",
         initial_allocs, initial_bytes
@@ -63,10 +64,8 @@ fn test_allocator_stats_tracking() {
         "After Dealloc: Deallocs={}, Bytes={}",
         after_dealloc_count, after_dealloc_bytes
     );
-}
 
-#[test]
-fn test_leak_reporting() {
+    // 2. Run the leak reporting test sequentially to avoid symbolication noise
     {
         let _guard = mem_profile::init();
         let leached = Box::new(42);

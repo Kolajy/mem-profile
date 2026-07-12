@@ -1,6 +1,10 @@
+pub mod alert;
 pub mod allocator;
 pub mod backtrace;
+pub mod flamegraph;
+pub mod pprof;
 pub mod report;
+pub mod snapshot;
 
 pub use allocator::ProfilingAllocator;
 
