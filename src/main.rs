@@ -9,9 +9,8 @@ use std::time::{Duration, Instant};
 fn get_rss(pid: u32, page_size: u64) -> Option<u64> {
     let statm_path = format!("/proc/{}/statm", pid);
     if let Ok(contents) = fs::read_to_string(statm_path) {
-        let parts: Vec<&str> = contents.split_whitespace().collect();
-        if parts.len() >= 2 {
-            if let Ok(pages) = parts[1].parse::<u64>() {
+        if let Some(part) = contents.split_whitespace().nth(1) {
+            if let Ok(pages) = part.parse::<u64>() {
                 return Some(pages * page_size);
             }
         }
