@@ -1,7 +1,9 @@
 use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
-use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::Write;
+#[cfg(unix)]
+use std::os::unix::fs::OpenOptionsExt;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -55,7 +57,13 @@ pub fn dump_to_file(path: &Path) {
         in_alloc.set(was_in);
     });
 
-    let mut file = match File::create(path) {
+    let mut options = OpenOptions::new();
+    options.write(true).create(true).truncate(true);
+
+    #[cfg(unix)]
+    options.mode(0o600); // 🛡️ Sentinel: Secure file permissions to prevent info disclosure
+
+    let mut file = match options.open(path) {
         Ok(f) => f,
         Err(e) => {
             eprintln!("Failed to create snapshot file: {}", e);
