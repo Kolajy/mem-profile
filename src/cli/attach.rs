@@ -37,9 +37,8 @@ pub fn execute(pid: u32) {
         }
 
         if let Ok(content) = fs::read_to_string(&statm_path) {
-            let parts: Vec<&str> = content.split_whitespace().collect();
-            if parts.len() >= 2 {
-                if let Ok(resident) = parts[1].parse::<u64>() {
+            if let Some(resident_str) = content.split_whitespace().nth(1) {
+                if let Ok(resident) = resident_str.parse::<u64>() {
                     if resident > peak_rss_pages {
                         peak_rss_pages = resident;
                     }
