@@ -136,6 +136,7 @@ fn main() {
     };
 
     let pid = child.id();
+    let statm_path = format!("/proc/{}/statm", pid);
     let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as u64 };
     let statm_path = format!("/proc/{}/statm", pid);
 
