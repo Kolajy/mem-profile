@@ -2,8 +2,10 @@ use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
 use inferno::flamegraph::{from_reader, Options};
 use std::collections::HashMap;
-use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::Cursor;
+#[cfg(unix)]
+use std::os::unix::fs::OpenOptionsExt;
 use std::path::Path;
 
 /// Formats and prints a leak report to stderr.
@@ -126,8 +128,14 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
         let mut opts = Options::default();
         let mut cursor = Cursor::new(folded_data.into_bytes());
 
+        let mut options = OpenOptions::new();
+        options.write(true).create(true).truncate(true);
+
+        #[cfg(unix)]
+        options.mode(0o600); // 🛡️ Sentinel: Secure file permissions to prevent info disclosure
+
         // Write out the flamegraph SVG
-        let file = File::create(path)?;
+        let file = options.open(path)?;
         let result = from_reader(&mut opts, &mut cursor, file)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e));
 

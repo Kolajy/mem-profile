@@ -20,7 +20,6 @@ fn parse_json_map(json: &str) -> HashMap<String, AllocationStats> {
     // Since we originally saved as HashMap<String, AllocationStats>, it'll be formatted like:
     // {"main;foo":{"size":100,"count":1},"main;bar":{"size":200,"count":2}}
 
-
     let mut in_string = false;
     let mut chars = json.chars().peekable();
 
@@ -56,9 +55,9 @@ fn parse_json_map(json: &str) -> HashMap<String, AllocationStats> {
 
     for i in 1..parts.len() {
         // parts[i-1] ends with the key string
-        let prev = parts[i-1];
+        let prev = parts[i - 1];
         let key_start = prev.rfind('"').unwrap_or(0);
-        let key = prev[key_start+1..].to_string();
+        let key = prev[key_start + 1..].to_string();
 
         // parts[i] starts with the size, followed by ,"count":
         let current = parts[i];
@@ -167,7 +166,10 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
             let size_sign = if size_diff >= 0 { "+" } else { "" };
             let count_sign = if count_diff >= 0 { "+" } else { "" };
             println!("  Stack: {}", stack);
-            println!("    Size Diff: {}{} bytes, Count Diff: {}{}", size_sign, size_diff, count_sign, count_diff);
+            println!(
+                "    Size Diff: {}{} bytes, Count Diff: {}{}",
+                size_sign, size_diff, count_sign, count_diff
+            );
         }
     }
     println!();

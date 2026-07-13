@@ -17,8 +17,7 @@ use ratatui::{
 };
 use std::{
     collections::HashMap,
-    fs,
-    io,
+    fs, io,
     path::Path,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -83,7 +82,8 @@ pub fn run() {
         terminal.backend_mut(),
         LeaveAlternateScreen,
         DisableMouseCapture
-    ).unwrap();
+    )
+    .unwrap();
     terminal.show_cursor().unwrap();
 
     is_running.store(false, Ordering::Relaxed);
@@ -328,21 +328,31 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
     // Graph
     let data: Vec<(f64, f64)> = app.rss_history.clone();
     let max_time = data.last().map(|d| d.0).unwrap_or(10.0).max(10.0);
-    let min_time = if max_time > 60.0 { max_time - 60.0 } else { 0.0 };
+    let min_time = if max_time > 60.0 {
+        max_time - 60.0
+    } else {
+        0.0
+    };
 
-    let max_bytes = data.iter().map(|d| d.1).fold(0.0, f64::max).max(1024.0 * 1024.0);
+    let max_bytes = data
+        .iter()
+        .map(|d| d.1)
+        .fold(0.0, f64::max)
+        .max(1024.0 * 1024.0);
 
-    let datasets = vec![
-        Dataset::default()
-            .name("RSS")
-            .marker(symbols::Marker::Braille)
-            .graph_type(GraphType::Line)
-            .style(Style::default().fg(Color::Cyan))
-            .data(&data),
-    ];
+    let datasets = vec![Dataset::default()
+        .name("RSS")
+        .marker(symbols::Marker::Braille)
+        .graph_type(GraphType::Line)
+        .style(Style::default().fg(Color::Cyan))
+        .data(&data)];
 
     let chart = Chart::new(datasets)
-        .block(Block::default().title("RSS Timeline (Last 60s)").borders(Borders::ALL))
+        .block(
+            Block::default()
+                .title("RSS Timeline (Last 60s)")
+                .borders(Borders::ALL),
+        )
         .x_axis(
             Axis::default()
                 .title("Time (s)")
@@ -387,13 +397,20 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
     });
 
     let sort_label = if app.sort_by_size { "Size" } else { "Count" };
-    let table = Table::new(rows, [
-        Constraint::Percentage(70),
-        Constraint::Percentage(15),
-        Constraint::Percentage(15),
-    ])
+    let table = Table::new(
+        rows,
+        [
+            Constraint::Percentage(70),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+        ],
+    )
     .header(header)
-    .block(Block::default().borders(Borders::ALL).title(format!("Active Allocations (Sorted by {})", sort_label)))
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(format!("Active Allocations (Sorted by {})", sort_label)),
+    )
     .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
     .highlight_symbol(">> ");
 
