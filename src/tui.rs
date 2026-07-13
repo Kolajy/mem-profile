@@ -11,7 +11,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     symbols,
-    text::Span,
+    text::{Line, Span},
     widgets::{Axis, Block, Borders, Cell, Chart, Dataset, GraphType, Row, Table, TableState},
     Frame, Terminal,
 };
@@ -294,18 +294,20 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
         .split(f.size());
 
     // Title / Status
-    let status = if app.process_exited {
-        " [PROCESS EXITED] "
+    let status_span = if app.process_exited {
+        Span::styled(" [PROCESS EXITED] ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))
     } else if app.is_paused {
-        " [PAUSED] "
+        Span::styled(" [PAUSED] ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
     } else {
-        " [RUNNING] "
+        Span::styled(" [RUNNING] ", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD))
     };
 
-    let title = format!(
-        " Mem-Profile TUI | PID: {}{} | Keys: [p]ause, [s]napshot, [r]e-sort, [q]uit, [up/down] scroll ",
-        app.pid, status
-    );
+    let title = Line::from(vec![
+        Span::raw(format!(" Mem-Profile TUI | PID: {} ", app.pid)),
+        status_span,
+        Span::raw(" | Keys: [p]ause, [s]napshot, [r]e-sort, [q]uit, [up/down] scroll "),
+    ]);
+
     let title_block = Block::default()
         .borders(Borders::ALL)
         .style(Style::default().fg(Color::White))
