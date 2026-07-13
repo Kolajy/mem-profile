@@ -302,10 +302,21 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
         Span::styled(" [RUNNING] ", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD))
     };
 
+    let key_style = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
     let title = Line::from(vec![
         Span::raw(format!(" Mem-Profile TUI | PID: {} ", app.pid)),
         status_span,
-        Span::raw(" | Keys: [p]ause, [s]napshot, [r]e-sort, [q]uit, [up/down] scroll "),
+        Span::raw(" | Keys: "),
+        Span::styled("[p]", key_style),
+        Span::raw("ause, "),
+        Span::styled("[s]", key_style),
+        Span::raw("napshot, "),
+        Span::styled("[r]", key_style),
+        Span::raw("e-sort, "),
+        Span::styled("[q]", key_style),
+        Span::raw("uit, "),
+        Span::styled("[up/down]", key_style),
+        Span::raw(" scroll "),
     ]);
 
     let title_block = Block::default()
@@ -379,9 +390,11 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
     f.render_widget(chart, chunks[1]);
 
     // Table
-    let header_cells = ["Backtrace", "Size", "Count"]
-        .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Yellow)));
+    let size_header = if app.sort_by_size { "Size ▼" } else { "Size" };
+    let count_header = if !app.sort_by_size { "Count ▼" } else { "Count" };
+    let header_cells = vec!["Backtrace", size_header, count_header]
+        .into_iter()
+        .map(|h| Cell::from(h).style(Style::default().fg(Color::Yellow)));
     let header = Row::new(header_cells)
         .style(Style::default().bg(Color::DarkGray))
         .height(1)
