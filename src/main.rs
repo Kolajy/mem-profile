@@ -6,8 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
-fn get_rss(pid: u32, page_size: u64) -> Option<u64> {
-    let statm_path = format!("/proc/{}/statm", pid);
+fn get_rss(statm_path: &str, page_size: u64) -> Option<u64> {
     if let Ok(contents) = fs::read_to_string(statm_path) {
         if let Some(part) = contents.split_whitespace().nth(1) {
             if let Ok(pages) = part.parse::<u64>() {
@@ -138,6 +137,7 @@ fn main() {
 
     let pid = child.id();
     let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as u64 };
+    let statm_path = format!("/proc/{}/statm", pid);
 
     let is_running = Arc::new(AtomicBool::new(true));
     let rss_data = Arc::new(Mutex::new(Vec::new()));
@@ -151,7 +151,7 @@ fn main() {
         let mut sleep_time = 100;
         let limit = 8192;
         while is_running_clone.load(Ordering::Relaxed) {
-            if let Some(rss) = get_rss(pid, page_size) {
+            if let Some(rss) = get_rss(&statm_path, page_size) {
                 if rss > 0 {
                     let mut data = rss_data_clone.lock().unwrap();
                     data.push(rss as f64);
