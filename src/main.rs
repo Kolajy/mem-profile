@@ -192,3 +192,31 @@ fn main() {
     draw_graph(&data, total_duration);
     std::process::exit(130); // Standard exit code for SIGINT
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_bytes() {
+        // Bytes
+        assert_eq!(format_bytes(0.0), "0 B");
+        assert_eq!(format_bytes(512.0), "512 B");
+        assert_eq!(format_bytes(1023.0), "1023 B");
+
+        // Kilobytes
+        assert_eq!(format_bytes(1024.0), "1.0 KB");
+        assert_eq!(format_bytes(1536.0), "1.5 KB");
+        assert_eq!(format_bytes(1024.0 * 1024.0 - 1.0), "1024.0 KB");
+
+        // Megabytes
+        assert_eq!(format_bytes(1024.0 * 1024.0), "1.0 MB");
+        assert_eq!(format_bytes(1.5 * 1024.0 * 1024.0), "1.5 MB");
+        assert_eq!(format_bytes(1024.0 * 1024.0 * 1024.0 - 1.0), "1024.0 MB");
+
+        // Gigabytes
+        assert_eq!(format_bytes(1024.0 * 1024.0 * 1024.0), "1.0 GB");
+        assert_eq!(format_bytes(1.5 * 1024.0 * 1024.0 * 1024.0), "1.5 GB");
+        assert_eq!(format_bytes(10.0 * 1024.0 * 1024.0 * 1024.0), "10.0 GB");
+    }
+}
