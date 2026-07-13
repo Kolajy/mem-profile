@@ -47,12 +47,7 @@ fn draw_graph(data: &[f64], total_duration: f64) {
             let end = ((i + 1) as f64 * chunk_size) as usize;
             let end = if end > data.len() { data.len() } else { end };
 
-            let mut max_val = 0.0_f64;
-            for j in start..end {
-                if data[j] > max_val {
-                    max_val = data[j];
-                }
-            }
+            let max_val = data[start..end].iter().copied().fold(0.0_f64, f64::max);
             display_data.push(max_val);
         }
     } else {
