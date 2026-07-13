@@ -23,6 +23,14 @@ unsafe impl Sync for AllocationMetadata {}
 
 const SHARD_COUNT: usize = 16;
 
+#[inline(always)]
+fn get_shard_idx(ptr: usize) -> usize {
+    // Allocator alignments often make lower bits 0 (e.g., multiples of 8 or 16).
+    // Mix the bits to distribute load evenly across shards and avoid lock contention.
+    let hash = (ptr >> 3) ^ (ptr >> 7) ^ (ptr >> 11);
+    hash % SHARD_COUNT
+}
+
 #[derive(Default)]
 pub struct Registry {
     shards: OnceLock<[Mutex<HashMap<usize, AllocationMetadata>>; SHARD_COUNT]>,
@@ -59,7 +67,7 @@ impl Registry {
     }
 
     pub fn insert(&self, ptr: usize, size: usize, backtrace: Vec<*mut std::ffi::c_void>) {
-        let shard_idx = ptr % SHARD_COUNT;
+        let shard_idx = get_shard_idx(ptr);
         let shards = self.get_shards();
         if let Ok(mut shard) = shards[shard_idx].lock() {
             shard.insert(
@@ -74,7 +82,7 @@ impl Registry {
     }
 
     pub fn remove(&self, ptr: usize) -> Option<AllocationMetadata> {
-        let shard_idx = ptr % SHARD_COUNT;
+        let shard_idx = get_shard_idx(ptr);
         let shards = self.get_shards();
         if let Ok(mut shard) = shards[shard_idx].lock() {
             shard.remove(&ptr)
@@ -84,7 +92,7 @@ impl Registry {
     }
 
     pub fn update_size(&self, ptr: usize, new_size: usize) {
-        let shard_idx = ptr % SHARD_COUNT;
+        let shard_idx = get_shard_idx(ptr);
         let shards = self.get_shards();
         if let Ok(mut shard) = shards[shard_idx].lock() {
             if let Some(meta) = shard.get_mut(&ptr) {
