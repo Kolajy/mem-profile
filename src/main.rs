@@ -60,16 +60,8 @@ fn draw_graph(data: &[f64], total_duration: f64) {
         display_data = data.to_vec();
     }
 
-    let mut min_v = display_data[0];
-    let mut max_v = display_data[0];
-    for &v in &display_data {
-        if v < min_v {
-            min_v = v;
-        }
-        if v > max_v {
-            max_v = v;
-        }
-    }
+    let min_v = display_data.iter().copied().fold(f64::INFINITY, f64::min);
+    let mut max_v = display_data.iter().copied().fold(f64::NEG_INFINITY, f64::max);
 
     if (min_v - max_v).abs() < f64::EPSILON {
         max_v += 1.0;
