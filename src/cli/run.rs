@@ -94,7 +94,10 @@ pub fn execute(command: String, args: Vec<String>) {
 
     eprintln!("\n=== Memory Profile ===");
     eprintln!("Command: {} {:?}", command, args);
-    eprintln!("Peak RSS: {:.2} MB ({} bytes)", peak_rss_mb, peak_rss_bytes_val);
+    eprintln!(
+        "Peak RSS: {:.2} MB ({} bytes)",
+        peak_rss_mb, peak_rss_bytes_val
+    );
 
     if !status.success() {
         if let Some(code) = status.code() {

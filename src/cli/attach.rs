@@ -9,7 +9,10 @@ pub fn execute(pid: u32) {
     // Check if process exists and we have permission to signal it
     let alive = unsafe { libc::kill(pid as i32, 0) };
     if alive != 0 {
-        eprintln!("Error: Cannot attach to PID {}. Process might not exist or permission denied.", pid);
+        eprintln!(
+            "Error: Cannot attach to PID {}. Process might not exist or permission denied.",
+            pid
+        );
         exit(1);
     }
 

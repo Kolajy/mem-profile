@@ -1,5 +1,5 @@
 use std::env;
-use std::process::{Command, exit};
+use std::process::{exit, Command};
 
 pub fn execute(args: Vec<String>) {
     let current_exe = env::current_exe().expect("Failed to get current executable path");
