@@ -163,13 +163,28 @@ fn main() {
     let start_time = Instant::now();
 
     let monitor_thread = thread::spawn(move || {
+        let mut sleep_time = 100;
+        let limit = 8192;
         while is_running_clone.load(Ordering::Relaxed) {
             if let Some(rss) = get_rss(pid, page_size) {
                 if rss > 0 {
-                    rss_data_clone.lock().unwrap().push(rss as f64);
+                    let mut data = rss_data_clone.lock().unwrap();
+                    data.push(rss as f64);
+                    if data.len() >= limit {
+                        let mut new_data = Vec::with_capacity(limit / 2);
+                        for chunk in data.chunks(2) {
+                            if chunk.len() == 2 {
+                                new_data.push(chunk[0].max(chunk[1]));
+                            } else {
+                                new_data.push(chunk[0]);
+                            }
+                        }
+                        *data = new_data;
+                        sleep_time *= 2;
+                    }
                 }
             }
-            thread::sleep(Duration::from_millis(100));
+            thread::sleep(Duration::from_millis(sleep_time));
         }
     });
 
