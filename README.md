@@ -29,6 +29,66 @@ To meet the high standards for inclusion as a core Homebrew package:
 
 ---
 
+## 📖 Usage Guide
+
+`mem-profile` can be used either as a command-line tool (CLI) to profile external binaries or integrated directly into your Rust code as a programmatic library.
+
+### 1. Command-Line Interface (CLI)
+
+The `mem-profile-cli` binary supports running commands under profiling, attaching to existing PIDs, or wrapping Cargo commands.
+
+* **Profile an arbitrary command:**
+  ```bash
+  cargo run --bin mem-profile-cli -- run <command> [args...]
+  ```
+  *Example:*
+  ```bash
+  cargo run --bin mem-profile-cli -- run sleep 1
+  ```
+
+* **Attach to an already running process by PID:**
+  ```bash
+  cargo run --bin mem-profile-cli -- attach <PID>
+  ```
+
+* **Run as a Cargo subcommand wrapper:**
+  ```bash
+  cargo run --bin mem-profile-cli -- cargo build
+  ```
+
+### 2. Programmatic Integration (Library)
+
+To use the custom global allocator and export memory reports or flamegraphs directly from your code:
+
+* **Declare the Global Allocator:**
+  ```rust
+  use mem_profile::ProfilingAllocator;
+  use std::alloc::System;
+
+  #[global_allocator]
+  static ALLOCATOR: ProfilingAllocator<System> = ProfilingAllocator::new(System);
+  ```
+
+* **Initialize and Generate Reports:**
+  ```rust
+  fn main() {
+      // Starts tracking allocations
+      let _guard = mem_profile::init();
+
+      // ... your application logic ...
+
+      // Export a flamegraph SVG to visualize memory hot paths
+      let _ = mem_profile::report::write_flamegraph("flamegraph.svg");
+  }
+  ```
+
+* **Run the Example:**
+  ```bash
+  cargo run --example test_flamegraph
+  ```
+
+---
+
 ## 🛠️ Project Structure
 
 ```
