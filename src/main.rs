@@ -91,19 +91,10 @@ fn draw_graph(data: &[f64], total_duration: f64) {
         let y1 = (((display_data[x] - min_v) / range_v) * (height - 1) as f64).round() as usize;
         let y2 = (((display_data[x + 1] - min_v) / range_v) * (height - 1) as f64).round() as usize;
 
-        if y1 < y2 {
-            for y in (y1 + 1)..y2 {
-                let y_idx = height - 1 - y;
-                if y_idx < height {
-                    grid[y_idx][x] = '|';
-                }
-            }
-        } else if y1 > y2 {
-            for y in (y2 + 1)..y1 {
-                let y_idx = height - 1 - y;
-                if y_idx < height {
-                    grid[y_idx][x] = '|';
-                }
+        for y in (std::cmp::min(y1, y2) + 1)..std::cmp::max(y1, y2) {
+            let y_idx = height - 1 - y;
+            if y_idx < height {
+                grid[y_idx][x] = '|';
             }
         }
     }
