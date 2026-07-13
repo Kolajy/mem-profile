@@ -174,26 +174,25 @@ fn main() {
     })
     .expect("Error setting Ctrl-C handler");
 
+    let exit_routine = |child: &mut std::process::Child, exit_code: i32| -> ! {
+        let _ = child.kill();
+        is_running.store(false, Ordering::Relaxed);
+        monitor_thread.join().unwrap();
+        let total_duration = start_time.elapsed().as_secs_f64();
+        let data = rss_data.lock().unwrap();
+        draw_graph(&data, total_duration);
+        std::process::exit(exit_code);
+    };
+
     while !is_interrupted.load(Ordering::SeqCst) {
         if let Ok(Some(status)) = child.try_wait() {
-            is_running.store(false, Ordering::Relaxed);
-            monitor_thread.join().unwrap();
-            let total_duration = start_time.elapsed().as_secs_f64();
-            let data = rss_data.lock().unwrap();
-            draw_graph(&data, total_duration);
-            std::process::exit(status.code().unwrap_or(0));
+            exit_routine(&mut child, status.code().unwrap_or(0));
         }
         thread::sleep(Duration::from_millis(10));
     }
 
     // If we reach here, it was interrupted
-    let _ = child.kill();
-    is_running.store(false, Ordering::Relaxed);
-    monitor_thread.join().unwrap();
-    let total_duration = start_time.elapsed().as_secs_f64();
-    let data = rss_data.lock().unwrap();
-    draw_graph(&data, total_duration);
-    std::process::exit(130); // Standard exit code for SIGINT
+    exit_routine(&mut child, 130); // Standard exit code for SIGINT
 }
 
 #[cfg(test)]
