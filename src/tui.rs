@@ -325,8 +325,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
         Span::raw(format!(" Mem-Profile TUI | PID: {} ", app.pid)),
         status_span,
         Span::raw(" | Keys: "),
-        Span::styled("[p]", key_style),
-        Span::raw("ause, "),
+        Span::styled("[p/Space]", key_style),
+        Span::raw(if app.is_paused { " resume, " } else { " pause, " }),
         Span::styled("[s]", key_style),
         Span::raw("napshot, "),
         Span::styled("[r]", key_style),
@@ -435,14 +435,18 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
         .height(1)
         .bottom_margin(1);
 
-    let rows = items.iter().map(|(trace, size, count)| {
-        let cells = vec![
-            Cell::from(trace.clone()),
-            Cell::from(format_bytes(*size as f64)),
-            Cell::from(count.to_string()),
-        ];
-        Row::new(cells).height(1)
-    });
+    let rows: Vec<Row> = if items.is_empty() {
+        vec![Row::new(vec![Cell::from("No active allocations tracked yet. Waiting for memory activity...").style(Style::default().fg(Color::DarkGray))]).height(1)]
+    } else {
+        items.iter().map(|(trace, size, count)| {
+            let cells = vec![
+                Cell::from(trace.clone()),
+                Cell::from(format_bytes(*size as f64)),
+                Cell::from(count.to_string()),
+            ];
+            Row::new(cells).height(1)
+        }).collect()
+    };
 
     let sort_label = if app.sort_by_size { "Size" } else { "Count" };
     let table = Table::new(
