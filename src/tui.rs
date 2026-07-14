@@ -246,9 +246,13 @@ fn get_active_allocations(sort_by_size: bool) -> Vec<(String, usize, usize)> {
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
                 for (_, meta) in shard.iter() {
-                    let entry = raw_allocs.entry(meta.backtrace.clone()).or_insert((0, 0));
-                    entry.0 += meta.size;
-                    entry.1 += 1;
+                    // Avoid unconditional clone() of the backtrace Vec by checking if it exists first.
+                    if let Some(entry) = raw_allocs.get_mut(&meta.backtrace) {
+                        entry.0 += meta.size;
+                        entry.1 += 1;
+                    } else {
+                        raw_allocs.insert(meta.backtrace.clone(), (meta.size, 1));
+                    }
                 }
             }
         }

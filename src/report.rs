@@ -23,7 +23,12 @@ pub fn print_leak_report() {
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
                 for (_, meta) in shard.iter() {
-                    *raw_leaks.entry(meta.backtrace.clone()).or_insert(0) += meta.size;
+                    // Avoid unconditional clone() of the backtrace Vec by checking if it exists first.
+                    if let Some(total_size) = raw_leaks.get_mut(&meta.backtrace) {
+                        *total_size += meta.size;
+                    } else {
+                        raw_leaks.insert(meta.backtrace.clone(), meta.size);
+                    }
                     total_bytes += meta.size;
                 }
             }
@@ -83,7 +88,12 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
                 for (_, meta) in shard.iter() {
-                    *raw_leaks.entry(meta.backtrace.clone()).or_insert(0) += meta.size;
+                    // Avoid unconditional clone() of the backtrace Vec by checking if it exists first.
+                    if let Some(total_size) = raw_leaks.get_mut(&meta.backtrace) {
+                        *total_size += meta.size;
+                    } else {
+                        raw_leaks.insert(meta.backtrace.clone(), meta.size);
+                    }
                 }
             }
         }
