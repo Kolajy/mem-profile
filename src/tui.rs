@@ -132,6 +132,7 @@ struct App {
     process_exited: bool,
     table_state: TableState,
     sort_by_size: bool, // true: size, false: count
+    last_snapshot_time: Option<Instant>,
 }
 
 impl App {
@@ -143,6 +144,7 @@ impl App {
             process_exited: false,
             table_state: TableState::default(),
             sort_by_size: true,
+            last_snapshot_time: None,
         }
     }
 
@@ -211,6 +213,7 @@ fn run_app<B: Backend>(
                     }
                     KeyCode::Char('s') => {
                         dump_to_file(Path::new("tui_snapshot.txt"));
+                        app_lock.last_snapshot_time = Some(Instant::now());
                     }
                     KeyCode::Char('r') => {
                         app_lock.sort_by_size = !app_lock.sort_by_size;
@@ -294,15 +297,30 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
 
     // Title / Status
     let status_span = if app.process_exited {
-        Span::styled(" [PROCESS EXITED] ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))
+        Span::styled(
+            " [PROCESS EXITED] ",
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+        )
     } else if app.is_paused {
-        Span::styled(" [PAUSED] ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+        Span::styled(
+            " [PAUSED] ",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )
     } else {
-        Span::styled(" [RUNNING] ", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD))
+        Span::styled(
+            " [RUNNING] ",
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        )
     };
 
-    let key_style = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
-    let title = Line::from(vec![
+    let key_style = Style::default()
+        .fg(Color::Cyan)
+        .add_modifier(Modifier::BOLD);
+    let mut spans = vec![
         Span::raw(format!(" Mem-Profile TUI | PID: {} ", app.pid)),
         status_span,
         Span::raw(" | Keys: "),
@@ -316,7 +334,20 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
         Span::raw("uit, "),
         Span::styled("[up/down]", key_style),
         Span::raw(" scroll "),
-    ]);
+    ];
+
+    if let Some(time) = app.last_snapshot_time {
+        if time.elapsed() < Duration::from_secs(3) {
+            spans.push(Span::styled(
+                " | Snapshot Saved! ",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ));
+        }
+    }
+
+    let title = Line::from(spans);
 
     let title_block = Block::default()
         .borders(Borders::ALL)
@@ -390,7 +421,11 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
 
     // Table
     let size_header = if app.sort_by_size { "Size ▼" } else { "Size" };
-    let count_header = if !app.sort_by_size { "Count ▼" } else { "Count" };
+    let count_header = if !app.sort_by_size {
+        "Count ▼"
+    } else {
+        "Count"
+    };
     let header_cells = vec!["Backtrace", size_header, count_header]
         .into_iter()
         .map(|h| Cell::from(h).style(Style::default().fg(Color::Yellow)));
