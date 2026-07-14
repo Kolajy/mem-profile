@@ -13,42 +13,48 @@ pub fn export_folded_stacks() -> String {
         let was_in = in_alloc.get();
         in_alloc.set(true);
 
+        let mut raw_stacks: HashMap<Vec<*mut std::ffi::c_void>, usize> = HashMap::new();
+
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
                 for (_, meta) in shard.iter() {
-                    let symbols = symbolicate_frames(&meta.backtrace);
-                    let mut stack_frames = Vec::new();
-
-                    // If we have no symbols (e.g. backtrace feature disabled),
-                    // we'll just group everything under an unknown root.
-                    if symbols.is_empty() {
-                        stack_frames.push("<unknown>".to_string());
-                    } else {
-                        // Reverse the frames to put the root (e.g. main) first,
-                        // and leaf (e.g. alloc) last.
-                        for sym in symbols.iter().rev() {
-                            let name = sym.name.as_deref().unwrap_or("<unknown>");
-
-                            // Filter out internal mem-profile functions
-                            if name.contains("mem_profile::") || name.contains("backtrace::") {
-                                continue;
-                            }
-
-                            // Folded stacks use semicolons as frame separators.
-                            // Ensure we don't have stray semicolons in function names.
-                            let clean_name = name.replace(";", ",");
-                            stack_frames.push(clean_name);
-                        }
-                    }
-
-                    if stack_frames.is_empty() {
-                        stack_frames.push("<unknown>".to_string());
-                    }
-
-                    let stack_str = stack_frames.join(";");
-                    *stacks.entry(stack_str).or_insert(0) += meta.size;
+                    *raw_stacks.entry(meta.backtrace.clone()).or_insert(0) += meta.size;
                 }
             }
+        }
+
+        for (backtrace, total_size) in raw_stacks {
+            let symbols = symbolicate_frames(&backtrace);
+            let mut stack_frames = Vec::new();
+
+            // If we have no symbols (e.g. backtrace feature disabled),
+            // we'll just group everything under an unknown root.
+            if symbols.is_empty() {
+                stack_frames.push("<unknown>".to_string());
+            } else {
+                // Reverse the frames to put the root (e.g. main) first,
+                // and leaf (e.g. alloc) last.
+                for sym in symbols.iter().rev() {
+                    let name = sym.name.as_deref().unwrap_or("<unknown>");
+
+                    // Filter out internal mem-profile functions
+                    if name.contains("mem_profile::") || name.contains("backtrace::") {
+                        continue;
+                    }
+
+                    // Folded stacks use semicolons as frame separators.
+                    // Ensure we don't have stray semicolons in function names.
+                    let clean_name = name.replace(";", ",");
+                    stack_frames.push(clean_name);
+                }
+            }
+
+            if stack_frames.is_empty() {
+                stack_frames.push("<unknown>".to_string());
+            }
+
+            let stack_str = stack_frames.join(";");
+            *stacks.entry(stack_str).or_insert(0) += total_size;
         }
 
         in_alloc.set(was_in);

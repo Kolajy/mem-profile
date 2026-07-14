@@ -10,65 +10,66 @@ use std::path::Path;
 
 /// Formats and prints a leak report to stderr.
 pub fn print_leak_report() {
-    // Collect all active allocations from the registry
-    let mut leaks = Vec::new();
-    let mut total_bytes = 0;
-
     // Temporarily set IN_ALLOCATOR to true to prevent any allocations during reporting
     // from being tracked.
     crate::allocator::IN_ALLOCATOR.with(|in_alloc| {
         let was_in = in_alloc.get();
         in_alloc.set(true);
 
+        // Collect all active allocations from the registry
+        let mut raw_leaks: HashMap<Vec<*mut std::ffi::c_void>, usize> = HashMap::new();
+        let mut total_bytes = 0;
+
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
-                for (ptr, meta) in shard.iter() {
-                    leaks.push((*ptr, meta.size, meta.backtrace.clone()));
+                for (_, meta) in shard.iter() {
+                    *raw_leaks.entry(meta.backtrace.clone()).or_insert(0) += meta.size;
                     total_bytes += meta.size;
                 }
             }
         }
 
-        in_alloc.set(was_in);
-    });
+        if raw_leaks.is_empty() {
+            eprintln!("\n========================================================================");
+            eprintln!("                      mem-profile: Memory Leak Report");
+            eprintln!("========================================================================");
+            eprintln!("No memory leaks detected!");
+            eprintln!("========================================================================\n");
+            in_alloc.set(was_in);
+            return;
+        }
 
-    if leaks.is_empty() {
         eprintln!("\n========================================================================");
         eprintln!("                      mem-profile: Memory Leak Report");
         eprintln!("========================================================================");
-        eprintln!("No memory leaks detected!");
-        eprintln!("========================================================================\n");
-        return;
-    }
+        eprintln!(
+            "Detected {} unique leak stack(s) totaling {} bytes.\n",
+            raw_leaks.len(),
+            total_bytes
+        );
 
-    eprintln!("\n========================================================================");
-    eprintln!("                      mem-profile: Memory Leak Report");
-    eprintln!("========================================================================");
-    eprintln!(
-        "Detected {} leak(s) totaling {} bytes.\n",
-        leaks.len(),
-        total_bytes
-    );
+        for (i, (frames, size)) in raw_leaks.iter().enumerate() {
+            eprintln!("Leak Stack {}: {} bytes", i + 1, size);
 
-    for (i, (_ptr, size, frames)) in leaks.iter().enumerate() {
-        eprintln!("Leak {}: {} bytes", i + 1, size);
-
-        let symbols = symbolicate_frames(frames);
-        if symbols.is_empty() {
-            eprintln!("  <no backtrace captured>");
-        } else {
-            for (idx, sym) in symbols.iter().enumerate() {
-                // Filter out internal mem-profile functions from the display if needed
-                let name = sym.name.as_deref().unwrap_or("<unknown>");
-                if name.contains("mem_profile::") || name.contains("backtrace::") {
-                    continue;
+            let symbols = symbolicate_frames(frames);
+            if symbols.is_empty() {
+                eprintln!("  <no backtrace captured>");
+            } else {
+                for (idx, sym) in symbols.iter().enumerate() {
+                    // Filter out internal mem-profile functions from the display if needed
+                    let name = sym.name.as_deref().unwrap_or("<unknown>");
+                    if name.contains("mem_profile::") || name.contains("backtrace::") {
+                        continue;
+                    }
+                    eprintln!("    #{idx}: {sym}");
                 }
-                eprintln!("    #{idx}: {sym}");
             }
+            eprintln!();
         }
-        eprintln!();
-    }
-    eprintln!("========================================================================\n");
+        eprintln!("========================================================================\n");
+
+        in_alloc.set(was_in);
+    });
 }
 
 /// Generates an SVG flamegraph from the current active allocations and saves it to the specified path.
@@ -77,17 +78,17 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
         let was_in = in_alloc.get();
         in_alloc.set(true); // Disable tracking during the whole reporting process to avoid internal memory bloat
 
-        let mut leaks = Vec::new();
+        let mut raw_leaks: HashMap<Vec<*mut std::ffi::c_void>, usize> = HashMap::new();
 
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
-                for (ptr, meta) in shard.iter() {
-                    leaks.push((*ptr, meta.size, meta.backtrace.clone()));
+                for (_, meta) in shard.iter() {
+                    *raw_leaks.entry(meta.backtrace.clone()).or_insert(0) += meta.size;
                 }
             }
         }
 
-        if leaks.is_empty() {
+        if raw_leaks.is_empty() {
             in_alloc.set(was_in);
             return Ok(());
         }
@@ -95,7 +96,7 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
         // Accumulate memory usage for identical stacks
         let mut folded_stacks = HashMap::new();
 
-        for (_ptr, size, frames) in leaks {
+        for (frames, size) in raw_leaks {
             let symbols = symbolicate_frames(&frames);
             if symbols.is_empty() {
                 continue;

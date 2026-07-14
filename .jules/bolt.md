@@ -1,3 +1,7 @@
 ## 2024-05-24 - Sharding Modulo Anti-Pattern for Pointers
 **Learning:** In the `ProfilingAllocator`'s thread-safe registry, sharding lock contention by using `ptr % SHARD_COUNT` (where `SHARD_COUNT=16`) caused severe uneven distribution. Due to typical heap allocation alignment (multiples of 8 or 16), the lower bits of heap pointers are mostly zero, causing almost all allocations to funnel directly into shard 0, creating a massive bottleneck instead of distributed load.
 **Action:** When mapping pointers to small bounded indices or shards, always ensure you mix bits using bitwise XOR and shifts (e.g., `(ptr >> 3) ^ (ptr >> 7) ...`) before applying modulo to effectively randomize the lower bits based on the higher structural bits of the address space.
+
+## 2024-05-18 - [Resolve Symbolication Bottleneck by Grouping Raw Backtraces]
+**Learning:** Generating memory reports, folded stacks, or TUI updates was slow and caused lock contention because the code eagerly symbolicated every single active allocation's raw backtrace `Vec<*mut std::ffi::c_void>`. Many active allocations originate from the exact same call stack.
+**Action:** When extracting data from the allocator's sharded `REGISTRY`, first group allocations into a `HashMap<Vec<*mut std::ffi::c_void>, ...>` (e.g. summing size/count) within the lock to minimize lock duration and clone overhead. Then, symbolicate only the unique raw backtraces outside the lock.
