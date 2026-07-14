@@ -61,7 +61,7 @@ pub fn dump_to_file(path: &Path) {
     options.write(true).create(true).truncate(true);
 
     #[cfg(unix)]
-    options.mode(0o600); // 🛡️ Sentinel: Secure file permissions to prevent info disclosure
+    options.mode(0o600).custom_flags(libc::O_NOFOLLOW); // 🛡️ Sentinel: Secure file permissions to prevent info disclosure and symlink attacks
 
     let mut file = match options.open(path) {
         Ok(f) => f,
