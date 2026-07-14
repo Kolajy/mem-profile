@@ -234,52 +234,53 @@ fn run_app<B: Backend>(
 
 // Returns a list of (backtrace_string, total_size, count)
 fn get_active_allocations(sort_by_size: bool) -> Vec<(String, usize, usize)> {
-    let mut allocs = Vec::new();
-
     crate::allocator::IN_ALLOCATOR.with(|in_alloc| {
         let was_in = in_alloc.get();
         in_alloc.set(true);
 
+        let mut raw_allocs: HashMap<Vec<*mut std::ffi::c_void>, (usize, usize)> = HashMap::new();
+
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
                 for (_, meta) in shard.iter() {
-                    allocs.push((meta.size, meta.backtrace.clone()));
+                    let entry = raw_allocs.entry(meta.backtrace.clone()).or_insert((0, 0));
+                    entry.0 += meta.size;
+                    entry.1 += 1;
                 }
             }
         }
 
-        in_alloc.set(was_in);
-    });
-
-    let mut folded = HashMap::new();
-    for (size, frames) in allocs {
-        let symbols = symbolicate_frames(&frames);
-        let mut stack = Vec::new();
-        for sym in symbols.iter().rev() {
-            let name = sym.name.as_deref().unwrap_or("<unknown>");
-            if name.contains("mem_profile::") || name.contains("backtrace::") {
-                continue;
+        let mut folded = HashMap::new();
+        for (frames, (total_size, count)) in raw_allocs {
+            let symbols = symbolicate_frames(&frames);
+            let mut stack = Vec::new();
+            for sym in symbols.iter().rev() {
+                let name = sym.name.as_deref().unwrap_or("<unknown>");
+                if name.contains("mem_profile::") || name.contains("backtrace::") {
+                    continue;
+                }
+                stack.push(name.to_string());
             }
-            stack.push(name.to_string());
+            if stack.is_empty() {
+                stack.push("<unknown>".to_string());
+            }
+            let stack_str = stack.join(" -> ");
+            let entry = folded.entry(stack_str).or_insert((0usize, 0usize));
+            entry.0 += total_size;
+            entry.1 += count;
         }
-        if stack.is_empty() {
-            stack.push("<unknown>".to_string());
+
+        let mut result: Vec<_> = folded.into_iter().map(|(k, v)| (k, v.0, v.1)).collect();
+
+        if sort_by_size {
+            result.sort_by(|a, b| b.1.cmp(&a.1));
+        } else {
+            result.sort_by(|a, b| b.2.cmp(&a.2));
         }
-        let stack_str = stack.join(" -> ");
-        let entry = folded.entry(stack_str).or_insert((0usize, 0usize));
-        entry.0 += size;
-        entry.1 += 1;
-    }
 
-    let mut result: Vec<_> = folded.into_iter().map(|(k, v)| (k, v.0, v.1)).collect();
-
-    if sort_by_size {
-        result.sort_by(|a, b| b.1.cmp(&a.1));
-    } else {
-        result.sort_by(|a, b| b.2.cmp(&a.2));
-    }
-
-    result
+        in_alloc.set(was_in);
+        result
+    })
 }
 
 fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
