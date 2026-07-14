@@ -18,7 +18,12 @@ pub fn export_folded_stacks() -> String {
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
                 for (_, meta) in shard.iter() {
-                    *raw_stacks.entry(meta.backtrace.clone()).or_insert(0) += meta.size;
+                    // Avoid unconditional clone() of the backtrace Vec by checking if it exists first.
+                    if let Some(total_size) = raw_stacks.get_mut(&meta.backtrace) {
+                        *total_size += meta.size;
+                    } else {
+                        raw_stacks.insert(meta.backtrace.clone(), meta.size);
+                    }
                 }
             }
         }

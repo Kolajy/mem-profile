@@ -5,3 +5,7 @@
 ## 2024-05-18 - [Resolve Symbolication Bottleneck by Grouping Raw Backtraces]
 **Learning:** Generating memory reports, folded stacks, or TUI updates was slow and caused lock contention because the code eagerly symbolicated every single active allocation's raw backtrace `Vec<*mut std::ffi::c_void>`. Many active allocations originate from the exact same call stack.
 **Action:** When extracting data from the allocator's sharded `REGISTRY`, first group allocations into a `HashMap<Vec<*mut std::ffi::c_void>, ...>` (e.g. summing size/count) within the lock to minimize lock duration and clone overhead. Then, symbolicate only the unique raw backtraces outside the lock.
+
+## 2024-07-14 - Avoid unconditional cloning in HashMap Entry API
+**Learning:** The HashMap `.entry(key.clone()).or_insert(...)` pattern is a known anti-pattern in hot loops when the key is expensive to clone (like a `Vec<*mut c_void>` backtrace). It forces a clone of the key *every single time*, even if the key is already in the map, causing unnecessary memory allocations and degrading performance during profile generation or leak reporting.
+**Action:** Always prefer a two-step approach (`get_mut` followed by an `insert` with `.clone()` only if the key doesn't exist) when dealing with keys that are expensive to clone inside hot processing loops.
