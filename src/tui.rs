@@ -133,6 +133,7 @@ struct App {
     table_state: TableState,
     sort_by_size: bool, // true: size, false: count
     last_snapshot_time: Option<Instant>,
+    last_snapshot_name: Option<String>,
 }
 
 impl App {
@@ -145,10 +146,15 @@ impl App {
             table_state: TableState::default(),
             sort_by_size: true,
             last_snapshot_time: None,
+            last_snapshot_name: None,
         }
     }
 
     fn next(&mut self, items_len: usize) {
+        if items_len == 0 {
+            self.table_state.select(None);
+            return;
+        }
         let i = match self.table_state.selected() {
             Some(i) => {
                 if i >= items_len.saturating_sub(1) {
@@ -163,6 +169,10 @@ impl App {
     }
 
     fn previous(&mut self, items_len: usize) {
+        if items_len == 0 {
+            self.table_state.select(None);
+            return;
+        }
         let i = match self.table_state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -219,6 +229,7 @@ fn run_app<B: Backend>(
                         let name = format!("tui_snapshot_{}.txt", timestamp);
                         dump_to_file(Path::new(&name));
                         app_lock.last_snapshot_time = Some(Instant::now());
+                        app_lock.last_snapshot_name = Some(name);
                     }
                     KeyCode::Char('r') => {
                         app_lock.sort_by_size = !app_lock.sort_by_size;
@@ -352,8 +363,13 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
 
     if let Some(time) = app.last_snapshot_time {
         if time.elapsed() < Duration::from_secs(3) {
+            let msg = if let Some(ref name) = app.last_snapshot_name {
+                format!(" | Snapshot saved to {}! ", name)
+            } else {
+                " | Snapshot Saved! ".to_string()
+            };
             spans.push(Span::styled(
-                " | Snapshot Saved! ",
+                msg,
                 Style::default()
                     .fg(Color::Green)
                     .add_modifier(Modifier::BOLD),
@@ -411,7 +427,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
             .marker(symbols::Marker::Braille)
             .graph_type(GraphType::Line)
             .style(Style::default().fg(Color::Cyan))
-            .data(&data)];
+            .data(data)];
 
         let chart = Chart::new(datasets)
             .block(
