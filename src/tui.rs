@@ -133,7 +133,14 @@ struct App {
     table_state: TableState,
     sort_by_size: bool, // true: size, false: count
     last_snapshot_time: Option<Instant>,
+    symbol_cache: HashMap<Vec<*mut std::ffi::c_void>, String>,
 }
+
+// SAFETY: We manually implement Send and Sync because App is wrapped in an Arc<Mutex<>>
+// and shared across threads. The raw pointers in the backtrace Vec represent
+// instruction addresses rather than owned data, so it's safe to share them.
+unsafe impl Send for App {}
+unsafe impl Sync for App {}
 
 impl App {
     fn new(pid: u32) -> Self {
@@ -145,6 +152,7 @@ impl App {
             table_state: TableState::default(),
             sort_by_size: true,
             last_snapshot_time: None,
+            symbol_cache: HashMap::new(),
         }
     }
 
@@ -189,7 +197,7 @@ fn run_app<B: Backend>(
         let items;
         {
             let mut app_lock = app.lock().unwrap();
-            items = get_active_allocations(app_lock.sort_by_size);
+            items = get_active_allocations(app_lock.sort_by_size, &mut app_lock.symbol_cache);
 
             terminal.draw(|f| ui(f, &mut app_lock, &items))?;
         }
@@ -241,7 +249,10 @@ fn run_app<B: Backend>(
 }
 
 // Returns a list of (backtrace_string, total_size, count)
-fn get_active_allocations(sort_by_size: bool) -> Vec<(String, usize, usize)> {
+fn get_active_allocations(
+    sort_by_size: bool,
+    symbol_cache: &mut HashMap<Vec<*mut std::ffi::c_void>, String>,
+) -> Vec<(String, usize, usize)> {
     crate::allocator::IN_ALLOCATOR.with(|in_alloc| {
         let was_in = in_alloc.get();
         in_alloc.set(true);
@@ -264,19 +275,26 @@ fn get_active_allocations(sort_by_size: bool) -> Vec<(String, usize, usize)> {
 
         let mut folded = HashMap::new();
         for (frames, (total_size, count)) in raw_allocs {
-            let symbols = symbolicate_frames(&frames);
-            let mut stack = Vec::new();
-            for sym in symbols.iter().rev() {
-                let name = sym.name.as_deref().unwrap_or("<unknown>");
-                if name.contains("mem_profile::") || name.contains("backtrace::") {
-                    continue;
+            let stack_str = if let Some(cached) = symbol_cache.get(&frames) {
+                cached.clone()
+            } else {
+                let symbols = symbolicate_frames(&frames);
+                let mut stack = Vec::new();
+                for sym in symbols.iter().rev() {
+                    let name = sym.name.as_deref().unwrap_or("<unknown>");
+                    if name.contains("mem_profile::") || name.contains("backtrace::") {
+                        continue;
+                    }
+                    stack.push(name.to_string());
                 }
-                stack.push(name.to_string());
-            }
-            if stack.is_empty() {
-                stack.push("<unknown>".to_string());
-            }
-            let stack_str = stack.join(" -> ");
+                if stack.is_empty() {
+                    stack.push("<unknown>".to_string());
+                }
+                let stack_str = stack.join(" -> ");
+                symbol_cache.insert(frames, stack_str.clone());
+                stack_str
+            };
+
             let entry = folded.entry(stack_str).or_insert((0usize, 0usize));
             entry.0 += total_size;
             entry.1 += count;
