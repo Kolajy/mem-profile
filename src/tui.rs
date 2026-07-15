@@ -391,7 +391,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
             .alignment(ratatui::layout::Alignment::Center);
         f.render_widget(info, chunks[1]);
     } else {
-        let data: Vec<(f64, f64)> = app.rss_history.clone();
+        // Zero-allocation: take a reference to the slice instead of unconditionally cloning the entire history Vec every frame.
+        let data: &[(f64, f64)] = &app.rss_history;
         let max_time = data.last().map(|d| d.0).unwrap_or(10.0).max(10.0);
         let min_time = if max_time > 60.0 {
             max_time - 60.0
@@ -470,7 +471,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
             .iter()
             .map(|(trace, size, count)| {
                 let cells = vec![
-                    Cell::from(trace.clone()),
+                    // Zero-allocation: use as_str() instead of trace.clone() to prevent string allocation per table row every frame.
+                    Cell::from(trace.as_str()),
                     Cell::from(format_bytes(*size as f64)),
                     Cell::from(count.to_string()),
                 ];
