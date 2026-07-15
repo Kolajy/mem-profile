@@ -1,6 +1,3 @@
-## 2026-07-13 - Added TUI Key Hints and Sort Indicators
-**Learning:** Adding visual hints and bold colors to shortcuts drastically improves terminal UX, and dynamic sorting arrows make interactive tables far more intuitive.
-**Action:** Always add visual indicators for sortable elements and distinguish keyboard shortcuts from generic text in TUIs.
-## 2026-07-13 - Dynamic Pause/Resume TUI Text and Empty State
-**Learning:** Adding dynamic wording to toggle actions ("pause"/"resume" instead of a static action name) provides immediate, clear feedback on current application state. Adding empty states to TUI tables prevents confusion when waiting for data to populate.
-**Action:** Always prefer dynamically labeling toggle shortcuts based on the state they *will* activate or the current status. Always include empty states for lists or tables that may start empty.
+## 2024-07-25 - [TUI Empty States]
+**Learning:** For TUI widgets (like charts or tables in ratatui), rendering empty vectors natively often results in cluttered visual artifacts (e.g. 0-to-large axis grids) that create poor first impressions.
+**Action:** Always conditionally render helpful placeholder messages (like "Waiting for data...") instead of empty charts or grids when state arrays are completely empty.

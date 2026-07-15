@@ -330,7 +330,11 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
         status_span,
         Span::raw(" | Keys: "),
         Span::styled("[p/Space]", key_style),
-        Span::raw(if app.is_paused { " resume, " } else { " pause, " }),
+        Span::raw(if app.is_paused {
+            " resume, "
+        } else {
+            " pause, "
+        }),
         Span::styled("[s]", key_style),
         Span::raw("napshot, "),
         Span::styled("[r]", key_style),
@@ -372,57 +376,68 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
     f.render_widget(info, chunks[0]);
 
     // Graph
-    let data: Vec<(f64, f64)> = app.rss_history.clone();
-    let max_time = data.last().map(|d| d.0).unwrap_or(10.0).max(10.0);
-    let min_time = if max_time > 60.0 {
-        max_time - 60.0
+    if app.rss_history.is_empty() {
+        let block = Block::default()
+            .title("RSS Timeline (Last 60s)")
+            .borders(Borders::ALL);
+        let info = ratatui::widgets::Paragraph::new("Waiting for initial memory reading...")
+            .block(block)
+            .style(Style::default().fg(Color::DarkGray))
+            .alignment(ratatui::layout::Alignment::Center);
+        f.render_widget(info, chunks[1]);
     } else {
-        0.0
-    };
+        let data: Vec<(f64, f64)> = app.rss_history.clone();
+        let max_time = data.last().map(|d| d.0).unwrap_or(10.0).max(10.0);
+        let min_time = if max_time > 60.0 {
+            max_time - 60.0
+        } else {
+            0.0
+        };
 
-    let max_bytes = data
-        .iter()
-        .map(|d| d.1)
-        .fold(0.0, f64::max)
-        .max(1024.0 * 1024.0);
+        let max_bytes = data
+            .iter()
+            .map(|d| d.1)
+            .fold(0.0, f64::max)
+            .max(1024.0 * 1024.0);
 
-    let datasets = vec![Dataset::default()
-        .name("RSS")
-        .marker(symbols::Marker::Braille)
-        .graph_type(GraphType::Line)
-        .style(Style::default().fg(Color::Cyan))
-        .data(&data)];
+        let datasets = vec![Dataset::default()
+            .name("RSS")
+            .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().fg(Color::Cyan))
+            .data(&data)];
 
-    let chart = Chart::new(datasets)
-        .block(
-            Block::default()
-                .title("RSS Timeline (Last 60s)")
-                .borders(Borders::ALL),
-        )
-        .x_axis(
-            Axis::default()
-                .title("Time (s)")
-                .style(Style::default().fg(Color::Gray))
-                .bounds([min_time, max_time])
-                .labels(vec![
-                    Span::raw(format!("{:.1}", min_time)),
-                    Span::raw(format!("{:.1}", (min_time + max_time) / 2.0)),
-                    Span::raw(format!("{:.1}", max_time)),
-                ]),
-        )
-        .y_axis(
-            Axis::default()
-                .title("Bytes")
-                .style(Style::default().fg(Color::Gray))
-                .bounds([0.0, max_bytes])
-                .labels(vec![
-                    Span::raw("0 B"),
-                    Span::raw(format_bytes(max_bytes / 2.0)),
-                    Span::raw(format_bytes(max_bytes)),
-                ]),
-        );
+        let chart = Chart::new(datasets)
+            .block(
+                Block::default()
+                    .title("RSS Timeline (Last 60s)")
+                    .borders(Borders::ALL),
+            )
+            .x_axis(
+                Axis::default()
+                    .title("Time (s)")
+                    .style(Style::default().fg(Color::Gray))
+                    .bounds([min_time, max_time])
+                    .labels(vec![
+                        Span::raw(format!("{:.1}", min_time)),
+                        Span::raw(format!("{:.1}", (min_time + max_time) / 2.0)),
+                        Span::raw(format!("{:.1}", max_time)),
+                    ]),
+            )
+            .y_axis(
+                Axis::default()
+                    .title("Bytes")
+                    .style(Style::default().fg(Color::Gray))
+                    .bounds([0.0, max_bytes])
+                    .labels(vec![
+                        Span::raw("0 B"),
+                        Span::raw(format_bytes(max_bytes / 2.0)),
+                        Span::raw(format_bytes(max_bytes)),
+                    ]),
+            );
 
-    f.render_widget(chart, chunks[1]);
+        f.render_widget(chart, chunks[1]);
+    }
 
     // Table
     let size_header = if app.sort_by_size { "Size ▼" } else { "Size" };
@@ -440,16 +455,23 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
         .bottom_margin(1);
 
     let rows: Vec<Row> = if items.is_empty() {
-        vec![Row::new(vec![Cell::from("No active allocations tracked yet. Waiting for memory activity...").style(Style::default().fg(Color::DarkGray))]).height(1)]
+        vec![Row::new(vec![Cell::from(
+            "No active allocations tracked yet. Waiting for memory activity...",
+        )
+        .style(Style::default().fg(Color::DarkGray))])
+        .height(1)]
     } else {
-        items.iter().map(|(trace, size, count)| {
-            let cells = vec![
-                Cell::from(trace.clone()),
-                Cell::from(format_bytes(*size as f64)),
-                Cell::from(count.to_string()),
-            ];
-            Row::new(cells).height(1)
-        }).collect()
+        items
+            .iter()
+            .map(|(trace, size, count)| {
+                let cells = vec![
+                    Cell::from(trace.clone()),
+                    Cell::from(format_bytes(*size as f64)),
+                    Cell::from(count.to_string()),
+                ];
+                Row::new(cells).height(1)
+            })
+            .collect()
     };
 
     let sort_label = if app.sort_by_size { "Size" } else { "Count" };
