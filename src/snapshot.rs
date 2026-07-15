@@ -28,10 +28,20 @@ pub fn setup_signal_handlers() {
 
     thread::spawn(move || loop {
         if SNAPSHOT_SIGUSR1.swap(false, Ordering::SeqCst) {
-            dump_to_file(Path::new("snapshot_sigusr1.txt"));
+            let timestamp = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+            let name = format!("snapshot_sigusr1_{}.txt", timestamp);
+            dump_to_file(Path::new(&name));
         }
         if SNAPSHOT_SIGUSR2.swap(false, Ordering::SeqCst) {
-            dump_to_file(Path::new("snapshot_sigusr2.txt"));
+            let timestamp = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+            let name = format!("snapshot_sigusr2_{}.txt", timestamp);
+            dump_to_file(Path::new(&name));
         }
         thread::sleep(Duration::from_millis(100));
     });
@@ -58,7 +68,7 @@ pub fn dump_to_file(path: &Path) {
     });
 
     let mut options = OpenOptions::new();
-    options.write(true).create(true).truncate(true);
+    options.write(true).create_new(true);
 
     #[cfg(unix)]
     options.mode(0o600).custom_flags(libc::O_NOFOLLOW); // 🛡️ Sentinel: Secure file permissions to prevent info disclosure and symlink attacks

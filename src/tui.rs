@@ -212,7 +212,12 @@ fn run_app<B: Backend>(
                         app_lock.is_paused = !app_lock.is_paused;
                     }
                     KeyCode::Char('s') => {
-                        dump_to_file(Path::new("tui_snapshot.txt"));
+                        let timestamp = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_secs();
+                        let name = format!("tui_snapshot_{}.txt", timestamp);
+                        dump_to_file(Path::new(&name));
                         app_lock.last_snapshot_time = Some(Instant::now());
                     }
                     KeyCode::Char('r') => {
