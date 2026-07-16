@@ -139,16 +139,34 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
         let mut opts = Options::default();
         let mut cursor = Cursor::new(folded_data.into_bytes());
 
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let path_ref = path.as_ref();
+        let tmp_path = path_ref.with_extension(format!("tmp.{}", timestamp));
+
         let mut options = OpenOptions::new();
-        options.write(true).create(true).truncate(true);
+        options.write(true).create_new(true);
 
         #[cfg(unix)]
         options.mode(0o600).custom_flags(libc::O_NOFOLLOW); // 🛡️ Sentinel: Secure file permissions to prevent info disclosure and symlink attacks
 
-        // Write out the flamegraph SVG
-        let file = options.open(path)?;
+        // Write out the flamegraph SVG to a temporary file
+        let file = options.open(&tmp_path)?;
         let result = from_reader(&mut opts, &mut cursor, file)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e));
+
+        if result.is_ok() {
+            // Atomically rename to target path to avoid hardlink arbitrary file overwrite vulnerabilities
+            if let Err(e) = std::fs::rename(&tmp_path, path_ref) {
+                let _ = std::fs::remove_file(&tmp_path);
+                in_alloc.set(was_in);
+                return Err(e);
+            }
+        } else {
+            let _ = std::fs::remove_file(&tmp_path);
+        }
 
         in_alloc.set(was_in);
         result
