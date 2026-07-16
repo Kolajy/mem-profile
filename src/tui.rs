@@ -287,13 +287,18 @@ fn get_active_allocations(
             }
         }
 
-        let mut folded = HashMap::new();
+        let mut folded: HashMap<String, (usize, usize)> = HashMap::new();
         for (frames, (total_size, count)) in raw_allocs {
             // Bolt: Symbolication is extremely expensive. Memoize the resolved string representation
             // of raw backtrace pointers to prevent severe CPU bottlenecks during the TUI render loop.
             let frame_ptrs = FramePtrs(frames.clone());
-            let stack_str = if let Some(cached) = symbol_cache.get(&frame_ptrs) {
-                cached.clone()
+            if let Some(cached) = symbol_cache.get(&frame_ptrs) {
+                if let Some(entry) = folded.get_mut(cached) {
+                    entry.0 += total_size;
+                    entry.1 += count;
+                } else {
+                    folded.insert(cached.clone(), (total_size, count));
+                }
             } else {
                 let symbols = symbolicate_frames(&frames);
                 let mut stack = Vec::new();
@@ -308,13 +313,15 @@ fn get_active_allocations(
                     stack.push("<unknown>".to_string());
                 }
                 let s = stack.join(" -> ");
-                symbol_cache.insert(frame_ptrs, s.clone());
-                s
-            };
 
-            let entry = folded.entry(stack_str).or_insert((0usize, 0usize));
-            entry.0 += total_size;
-            entry.1 += count;
+                if let Some(entry) = folded.get_mut(&s) {
+                    entry.0 += total_size;
+                    entry.1 += count;
+                } else {
+                    folded.insert(s.clone(), (total_size, count));
+                }
+                symbol_cache.insert(frame_ptrs, s);
+            }
         }
 
         let mut result: Vec<_> = folded.into_iter().map(|(k, v)| (k, v.0, v.1)).collect();
