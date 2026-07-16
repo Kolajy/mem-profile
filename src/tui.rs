@@ -134,7 +134,17 @@ struct App {
     sort_by_size: bool, // true: size, false: count
     last_snapshot_time: Option<Instant>,
     last_snapshot_name: Option<String>,
+    symbol_cache: HashMap<FramePtrs, String>,
 }
+
+// Wrapping the raw pointer backtrace vectors to safely implement Send/Sync without risking
+// future non-thread-safe fields in App being inadvertently allowed across threads.
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+struct FramePtrs(Vec<*mut std::ffi::c_void>);
+
+// Safe because the raw pointers are just instruction addresses, not owned memory.
+unsafe impl Send for FramePtrs {}
+unsafe impl Sync for FramePtrs {}
 
 impl App {
     fn new(pid: u32) -> Self {
@@ -147,6 +157,7 @@ impl App {
             sort_by_size: true,
             last_snapshot_time: None,
             last_snapshot_name: None,
+            symbol_cache: HashMap::new(),
         }
     }
 
@@ -199,7 +210,7 @@ fn run_app<B: Backend>(
         let items;
         {
             let mut app_lock = app.lock().unwrap();
-            items = get_active_allocations(app_lock.sort_by_size);
+            items = get_active_allocations(app_lock.sort_by_size, &mut app_lock.symbol_cache);
 
             terminal.draw(|f| ui(f, &mut app_lock, &items))?;
         }
@@ -252,7 +263,10 @@ fn run_app<B: Backend>(
 }
 
 // Returns a list of (backtrace_string, total_size, count)
-fn get_active_allocations(sort_by_size: bool) -> Vec<(String, usize, usize)> {
+fn get_active_allocations(
+    sort_by_size: bool,
+    symbol_cache: &mut HashMap<FramePtrs, String>,
+) -> Vec<(String, usize, usize)> {
     crate::allocator::IN_ALLOCATOR.with(|in_alloc| {
         let was_in = in_alloc.get();
         in_alloc.set(true);
@@ -275,19 +289,29 @@ fn get_active_allocations(sort_by_size: bool) -> Vec<(String, usize, usize)> {
 
         let mut folded = HashMap::new();
         for (frames, (total_size, count)) in raw_allocs {
-            let symbols = symbolicate_frames(&frames);
-            let mut stack = Vec::new();
-            for sym in symbols.iter().rev() {
-                let name = sym.name.as_deref().unwrap_or("<unknown>");
-                if name.contains("mem_profile::") || name.contains("backtrace::") {
-                    continue;
+            // Bolt: Symbolication is extremely expensive. Memoize the resolved string representation
+            // of raw backtrace pointers to prevent severe CPU bottlenecks during the TUI render loop.
+            let frame_ptrs = FramePtrs(frames.clone());
+            let stack_str = if let Some(cached) = symbol_cache.get(&frame_ptrs) {
+                cached.clone()
+            } else {
+                let symbols = symbolicate_frames(&frames);
+                let mut stack = Vec::new();
+                for sym in symbols.iter().rev() {
+                    let name = sym.name.as_deref().unwrap_or("<unknown>");
+                    if name.contains("mem_profile::") || name.contains("backtrace::") {
+                        continue;
+                    }
+                    stack.push(name.to_string());
                 }
-                stack.push(name.to_string());
-            }
-            if stack.is_empty() {
-                stack.push("<unknown>".to_string());
-            }
-            let stack_str = stack.join(" -> ");
+                if stack.is_empty() {
+                    stack.push("<unknown>".to_string());
+                }
+                let s = stack.join(" -> ");
+                symbol_cache.insert(frame_ptrs, s.clone());
+                s
+            };
+
             let entry = folded.entry(stack_str).or_insert((0usize, 0usize));
             entry.0 += total_size;
             entry.1 += count;
