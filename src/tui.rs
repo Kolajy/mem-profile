@@ -391,7 +391,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
         Span::raw("e-sort, "),
         Span::styled("[q]", key_style),
         Span::raw("uit, "),
-        Span::styled("[up/down]", key_style),
+        Span::styled("[↑/↓/j/k]", key_style),
         Span::raw(" scroll "),
     ];
 
@@ -496,15 +496,34 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
     }
 
     // Table
-    let size_header = if app.sort_by_size { "Size ▼" } else { "Size" };
-    let count_header = if !app.sort_by_size {
-        "Count ▼"
+    let (size_header, size_style) = if app.sort_by_size {
+        (
+            "Size ▼",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )
     } else {
-        "Count"
+        ("Size", Style::default().fg(Color::Yellow))
     };
-    let header_cells = vec!["Backtrace", size_header, count_header]
-        .into_iter()
-        .map(|h| Cell::from(h).style(Style::default().fg(Color::Yellow)));
+
+    let (count_header, count_style) = if !app.sort_by_size {
+        (
+            "Count ▼",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )
+    } else {
+        ("Count", Style::default().fg(Color::Yellow))
+    };
+
+    let header_cells = vec![
+        Cell::from("Backtrace").style(Style::default().fg(Color::Yellow)),
+        Cell::from(size_header).style(size_style),
+        Cell::from(count_header).style(count_style),
+    ];
+
     let header = Row::new(header_cells)
         .style(Style::default().bg(Color::DarkGray))
         .height(1)
@@ -512,7 +531,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
 
     let rows: Vec<Row> = if items.is_empty() {
         vec![Row::new(vec![Cell::from(
-            "No active allocations tracked yet. Waiting for memory activity...",
+            "No allocations tracked yet. Waiting for activity...",
         )
         .style(Style::default().fg(Color::DarkGray))])
         .height(1)]
@@ -544,7 +563,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
     .block(
         Block::default()
             .borders(Borders::ALL)
-            .title(format!("Active Allocations (Sorted by {})", sort_label)),
+            .title(format!("Active Allocations ({} items - Sorted by {})", items.len(), sort_label)),
     )
     .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
     .highlight_symbol(">> ");
