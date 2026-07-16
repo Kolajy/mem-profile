@@ -5,3 +5,6 @@
 ## 2024-07-26 - [TUI Empty States Highlighting & Toast Feedback]
 **Learning:** Highlighting empty state placeholder rows in TUI lists confuses users by indicating interactivity where there is none. Additionally, generic success toasts (like "Snapshot Saved") lack actionable value.
 **Action:** Always clear UI list selection states when rendering empty placeholder content. Ensure toast feedback includes context (like filenames) so the user doesn't have to guess or check the filesystem manually.
+## 2024-06-25 - Prevent highlighting empty state rows in TUIs
+**Learning:** For TUI lists or tables rendering empty placeholder content, users can be confused if the non-interactive fallback rows are highlighted as if they were selectable data.
+**Action:** Strictly clear the UI selection state (e.g., calling `table_state.select(None)`) when the data list is empty to prevent highlighting empty fallback rows.

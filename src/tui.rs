@@ -307,6 +307,9 @@ fn get_active_allocations(sort_by_size: bool) -> Vec<(String, usize, usize)> {
 }
 
 fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
+    if items.is_empty() {
+        app.table_state.select(None);
+    }
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
