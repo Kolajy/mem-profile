@@ -13,3 +13,6 @@
 ## 2024-07-15 - Zero-Allocation in Terminal UI Hot Loops
 **Learning:** In highly frequent terminal UI render loops (e.g., `ratatui` `draw` cycles), passing owned data using unconditional cloning (like `String::clone()` or `Vec::clone()`) causes severe garbage collection overhead and memory bloat on every frame, even though `ratatui` widgets inherently support borrowed data (e.g., `&str`, `&[T]`).
 **Action:** When working with `ratatui` cells, spans, or charts, strictly construct them from references (`.as_str()`, `&[]`) derived from application state rather than cloning the state to prevent continuous heap allocations in the main thread.
+## 2026-07-16 - Safe TUI Symbolication Memoization
+**Learning:** Calling `symbolicate_frames` repeatedly in a TUI loop causes massive CPU spikes. Memoization requires safely wrapping raw pointers to be thread-safe for the App state using `unsafe impl Send` and `Sync` on a dedicated newtype.
+**Action:** Always memoize expensive formatting or processing tasks (like stack trace symbolication) outside of the core rendering loop and ensure safe newtypes are used when handling raw pointers in concurrent structures.
