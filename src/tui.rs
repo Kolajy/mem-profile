@@ -134,7 +134,7 @@ struct App {
     sort_by_size: bool, // true: size, false: count
     last_snapshot_time: Option<Instant>,
     last_snapshot_name: Option<String>,
-    symbol_cache: HashMap<FramePtrs, String>,
+    symbol_cache: HashMap<FramePtrs, Arc<String>>,
 }
 
 // Wrapping the raw pointer backtrace vectors to safely implement Send/Sync without risking
@@ -265,8 +265,8 @@ fn run_app<B: Backend>(
 // Returns a list of (backtrace_string, total_size, count)
 fn get_active_allocations(
     sort_by_size: bool,
-    symbol_cache: &mut HashMap<FramePtrs, String>,
-) -> Vec<(String, usize, usize)> {
+    symbol_cache: &mut HashMap<FramePtrs, Arc<String>>,
+) -> Vec<(Arc<String>, usize, usize)> {
     crate::allocator::IN_ALLOCATOR.with(|in_alloc| {
         let was_in = in_alloc.get();
         in_alloc.set(true);
@@ -287,7 +287,7 @@ fn get_active_allocations(
             }
         }
 
-        let mut folded: HashMap<String, (usize, usize)> = HashMap::new();
+        let mut folded: HashMap<Arc<String>, (usize, usize)> = HashMap::new();
         for (frames, (total_size, count)) in raw_allocs {
             // Bolt: Symbolication is extremely expensive. Memoize the resolved string representation
             // of raw backtrace pointers to prevent severe CPU bottlenecks during the TUI render loop.
@@ -298,7 +298,7 @@ fn get_active_allocations(
                     entry.0 += total_size;
                     entry.1 += count;
                 } else {
-                    folded.insert(cached.clone(), (total_size, count));
+                    folded.insert(Arc::clone(cached), (total_size, count));
                 }
             } else {
                 let symbols = symbolicate_frames(&frame_ptrs.0);
@@ -313,15 +313,16 @@ fn get_active_allocations(
                 if stack.is_empty() {
                     stack.push("<unknown>".to_string());
                 }
-                let s = stack.join(" -> ");
+
+                let s = Arc::new(stack.join(" -> "));
 
                 if let Some(entry) = folded.get_mut(&s) {
                     entry.0 += total_size;
                     entry.1 += count;
                 } else {
-                    folded.insert(s.clone(), (total_size, count));
+                    folded.insert(Arc::clone(&s), (total_size, count));
                 }
-                symbol_cache.insert(frame_ptrs, s);
+                symbol_cache.insert(frame_ptrs, Arc::clone(&s));
             }
         }
 
@@ -338,7 +339,7 @@ fn get_active_allocations(
     })
 }
 
-fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
+fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     if items.is_empty() {
         app.table_state.select(None);
     }
@@ -561,11 +562,11 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
         ],
     )
     .header(header)
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title(format!("Active Allocations ({} items - Sorted by {})", items.len(), sort_label)),
-    )
+    .block(Block::default().borders(Borders::ALL).title(format!(
+        "Active Allocations ({} items - Sorted by {})",
+        items.len(),
+        sort_label
+    )))
     .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
     .highlight_symbol(">> ");
 
