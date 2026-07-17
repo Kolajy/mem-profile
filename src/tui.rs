@@ -531,7 +531,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(String, usize, usize)]) {
 
     let rows: Vec<Row> = if items.is_empty() {
         vec![Row::new(vec![Cell::from(
-            "No allocations tracked yet. Waiting for activity...",
+            "No allocations tracked. Waiting for data...",
         )
         .style(Style::default().fg(Color::DarkGray))])
         .height(1)]
