@@ -291,7 +291,8 @@ fn get_active_allocations(
         for (frames, (total_size, count)) in raw_allocs {
             // Bolt: Symbolication is extremely expensive. Memoize the resolved string representation
             // of raw backtrace pointers to prevent severe CPU bottlenecks during the TUI render loop.
-            let frame_ptrs = FramePtrs(frames.clone());
+            // Bolt: Avoid unconditional clone() of `frames` here by moving ownership into `FramePtrs`.
+            let frame_ptrs = FramePtrs(frames);
             if let Some(cached) = symbol_cache.get(&frame_ptrs) {
                 if let Some(entry) = folded.get_mut(cached) {
                     entry.0 += total_size;
@@ -300,7 +301,7 @@ fn get_active_allocations(
                     folded.insert(cached.clone(), (total_size, count));
                 }
             } else {
-                let symbols = symbolicate_frames(&frames);
+                let symbols = symbolicate_frames(&frame_ptrs.0);
                 let mut stack = Vec::new();
                 for sym in symbols.iter().rev() {
                     let name = sym.name.as_deref().unwrap_or("<unknown>");
