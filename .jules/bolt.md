@@ -19,3 +19,6 @@
 ## 2026-07-16 - Safe TUI Symbolication Memoization
 **Learning:** Calling `symbolicate_frames` repeatedly in a TUI loop causes massive CPU spikes. Memoization requires safely wrapping raw pointers to be thread-safe for the App state using `unsafe impl Send` and `Sync` on a dedicated newtype.
 **Action:** Always memoize expensive formatting or processing tasks (like stack trace symbolication) outside of the core rendering loop and ensure safe newtypes are used when handling raw pointers in concurrent structures.
+## 2024-07-17 - [TUI Clone Optimization]
+**Learning:** In hot loops, particularly in terminal UI render loops, `clone()` can become a significant CPU bottleneck. The memory profiling `App` struct uses a stateful symbol cache indexed by `FramePtrs`. By avoiding `clone()` entirely for `frames` and moving it into `FramePtrs` when fetching from the cache, we removed an unnecessary dynamic memory allocation every single render tick.
+**Action:** When working with cache map lookups that might take owned types inside highly frequent loops, refactor code to move/take ownership of data structures instead of cloning them.
