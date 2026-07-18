@@ -17,7 +17,8 @@ use ratatui::{
 };
 use std::{
     collections::HashMap,
-    fs, io,
+    fs::File,
+    io::{self, Read},
     path::Path,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -98,10 +99,15 @@ fn get_rss_bytes(pid: u32, page_size: u64) -> Option<u64> {
     #[cfg(target_os = "linux")]
     {
         let statm_path = format!("/proc/{}/statm", pid);
-        if let Ok(content) = fs::read_to_string(&statm_path) {
-            if let Some(resident_str) = content.split_whitespace().nth(1) {
-                if let Ok(resident) = resident_str.parse::<u64>() {
-                    return Some(resident * page_size);
+        if let Ok(mut file) = File::open(&statm_path) {
+            let mut buf = [0u8; 128];
+            if let Ok(n) = file.read(&mut buf) {
+                if let Ok(content) = std::str::from_utf8(&buf[..n]) {
+                    if let Some(resident_str) = content.split_whitespace().nth(1) {
+                        if let Ok(resident) = resident_str.parse::<u64>() {
+                            return Some(resident * page_size);
+                        }
+                    }
                 }
             }
         }
