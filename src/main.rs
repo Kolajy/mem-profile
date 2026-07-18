@@ -1,5 +1,6 @@
 use std::env;
-use std::fs;
+use std::fs::File;
+use std::io::Read;
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -7,10 +8,15 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 fn get_rss(statm_path: &str, page_size: u64) -> Option<u64> {
-    if let Ok(contents) = fs::read_to_string(statm_path) {
-        if let Some(part) = contents.split_whitespace().nth(1) {
-            if let Ok(pages) = part.parse::<u64>() {
-                return Some(pages * page_size);
+    if let Ok(mut file) = File::open(statm_path) {
+        let mut buf = [0u8; 128];
+        if let Ok(n) = file.read(&mut buf) {
+            if let Ok(contents) = std::str::from_utf8(&buf[..n]) {
+                if let Some(part) = contents.split_whitespace().nth(1) {
+                    if let Ok(pages) = part.parse::<u64>() {
+                        return Some(pages * page_size);
+                    }
+                }
             }
         }
     }
@@ -131,7 +137,6 @@ fn main() {
     };
 
     let pid = child.id();
-    let statm_path = format!("/proc/{}/statm", pid);
     let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as u64 };
     let statm_path = format!("/proc/{}/statm", pid);
 

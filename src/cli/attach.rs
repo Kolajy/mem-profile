@@ -1,4 +1,5 @@
-use std::fs;
+use std::fs::File;
+use std::io::Read;
 use std::process::exit;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -36,16 +37,21 @@ pub fn execute(pid: u32) {
             break;
         }
 
-        if let Ok(content) = fs::read_to_string(&statm_path) {
-            if let Some(resident_str) = content.split_whitespace().nth(1) {
-                if let Ok(resident) = resident_str.parse::<u64>() {
-                    if resident > peak_rss_pages {
-                        peak_rss_pages = resident;
+        if let Ok(mut file) = File::open(&statm_path) {
+            let mut buf = [0u8; 128];
+            if let Ok(n) = file.read(&mut buf) {
+                if let Ok(content) = std::str::from_utf8(&buf[..n]) {
+                    if let Some(resident_str) = content.split_whitespace().nth(1) {
+                        if let Ok(resident) = resident_str.parse::<u64>() {
+                            if resident > peak_rss_pages {
+                                peak_rss_pages = resident;
+                            }
+                        }
                     }
                 }
             }
         } else {
-            // Process might have exited between the kill check and read_to_string
+            // Process might have exited between the kill check and file open
             break;
         }
 

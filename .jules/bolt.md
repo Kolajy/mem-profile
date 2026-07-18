@@ -25,3 +25,6 @@
 ## 2024-11-21 - Zero-Allocation TUI Cache via Arc<String>
 **Learning:** In the hot TUI render loop, grouping backtraces and inserting cached symbolicated strings into a new temporary `HashMap` caused the program to unconditionally call `cached.clone()` (a `String` clone operation) for every unique allocation path on *every tick*. This caused significant heap bloat and CPU overhead from garbage string allocations.
 **Action:** When a temporary data structure (like the tick-specific `folded` map) needs ownership or copies of values stored in a persistent cache, store those values wrapped in an `Arc<T>` (e.g., `Arc<String>`). This ensures the cache lookups and inserts only cost an atomic reference count increment (`Arc::clone`) instead of an entire string allocation.
+## 2025-01-22 - Zero-Allocation statm Parsing in Polling Loops
+**Learning:** Using `std::fs::read_to_string` inside tight polling loops (e.g., reading `/proc/{pid}/statm` every 10ms) causes constant dynamic string allocations and garbage collection overhead. Since the `statm` file content is very small, allocating a heap string every read causes significant memory bloat and CPU usage.
+**Action:** Always use a stack-allocated buffer (`[0u8; 128]`) with `std::fs::File::open` and `.read()` when continuously polling small pseudo-files like `/proc/...` to ensure zero heap allocations per tick.
