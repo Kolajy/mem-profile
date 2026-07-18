@@ -11,3 +11,6 @@
 ## 2024-05-18 - TUI Information Density & Discoverability
 **Learning:** Terminal User Interfaces are severely constrained by 80-column defaults, easily leading to horizontal truncation of empty states. Additionally, implicit features (like vim-style j/k scrolling) are practically non-existent to users unless explicitly surfaced in minimal hint areas.
 **Action:** Always constrain empty state copy to under 50 characters for TUI components that share column widths. Prioritize space-efficient key hints (e.g., `[↑/↓/j/k]`) over verbose ones (`[up/down]`) to maximize feature discoverability without breaking layout.
+## 2024-07-27 - [TUI List Scroll Position Indicators]
+**Learning:** Terminal tables and lists lack native OS scrollbars. When users scroll through a long list using keys (like `j/k`), they easily lose their sense of position within the dataset, leading to poor orientation and UX.
+**Action:** Always include an explicit positional indicator (e.g., "Item 5 of 50") in the title or header of scrollable TUI widgets to provide continuous orientation without consuming extra row space.

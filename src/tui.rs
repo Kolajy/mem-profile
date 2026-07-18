@@ -553,6 +553,21 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     };
 
     let sort_label = if app.sort_by_size { "Size" } else { "Count" };
+    let title_text = if let Some(selected) = app.table_state.selected() {
+        format!(
+            "Active Allocations ({} of {} items - Sorted by {})",
+            selected + 1,
+            items.len(),
+            sort_label
+        )
+    } else {
+        format!(
+            "Active Allocations ({} items - Sorted by {})",
+            items.len(),
+            sort_label
+        )
+    };
+
     let table = Table::new(
         rows,
         [
@@ -562,11 +577,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         ],
     )
     .header(header)
-    .block(Block::default().borders(Borders::ALL).title(format!(
-        "Active Allocations ({} items - Sorted by {})",
-        items.len(),
-        sort_label
-    )))
+    .block(Block::default().borders(Borders::ALL).title(title_text))
     .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
     .highlight_symbol(">> ");
 
