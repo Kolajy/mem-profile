@@ -236,7 +236,7 @@ fn run_app<B: Backend>(
                         let timestamp = std::time::SystemTime::now()
                             .duration_since(std::time::UNIX_EPOCH)
                             .unwrap_or_default()
-                            .as_secs();
+                            .as_nanos();
                         let name = format!("tui_snapshot_{}.txt", timestamp);
                         dump_to_file(Path::new(&name));
                         app_lock.last_snapshot_time = Some(Instant::now());

@@ -31,7 +31,7 @@ pub fn setup_signal_handlers() {
             let timestamp = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
-                .as_secs();
+                .as_nanos();
             let name = format!("snapshot_sigusr1_{}.txt", timestamp);
             dump_to_file(Path::new(&name));
         }
@@ -39,7 +39,7 @@ pub fn setup_signal_handlers() {
             let timestamp = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
-                .as_secs();
+                .as_nanos();
             let name = format!("snapshot_sigusr2_{}.txt", timestamp);
             dump_to_file(Path::new(&name));
         }
@@ -67,16 +67,22 @@ pub fn dump_to_file(path: &Path) {
         in_alloc.set(was_in);
     });
 
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let tmp_path = path.with_extension(format!("tmp.{}", timestamp));
+
     let mut options = OpenOptions::new();
     options.write(true).create_new(true);
 
     #[cfg(unix)]
     options.mode(0o600).custom_flags(libc::O_NOFOLLOW); // 🛡️ Sentinel: Secure file permissions to prevent info disclosure and symlink attacks
 
-    let mut file = match options.open(path) {
+    let mut file = match options.open(&tmp_path) {
         Ok(f) => f,
         Err(e) => {
-            eprintln!("Failed to create snapshot file: {}", e);
+            eprintln!("Failed to create temporary snapshot file: {}", e);
             return;
         }
     };
@@ -99,5 +105,12 @@ pub fn dump_to_file(path: &Path) {
                 let _ = writeln!(file, "    #{}: {}", idx, sym);
             }
         }
+    }
+
+    drop(file);
+
+    if let Err(e) = std::fs::rename(&tmp_path, path) {
+        let _ = std::fs::remove_file(&tmp_path);
+        eprintln!("Failed to atomically rename snapshot file: {}", e);
     }
 }
