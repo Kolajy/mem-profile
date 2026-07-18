@@ -11,3 +11,7 @@
 **Vulnerability:** Files created with predictible names (e.g., `tui_snapshot.txt`) using `OpenOptions::create(true).truncate(true)` are vulnerable to Arbitrary File Overwrite via hardlink attacks, even if `O_NOFOLLOW` is used (which only protects against symlinks).
 **Learning:** Hardlink attacks bypass symlink protections. To safely write dumps or reports to predictable locations, the application must ensure the file does not already exist.
 **Prevention:** Use unpredictable filenames (like appending a timestamp) and use `OpenOptions::create_new(true)` to safely enforce that the file being written does not exist prior to creation.
+## 2024-07-16 - [Safe File Overwrites via Atomic Rename]
+**Vulnerability:** When writing to paths provided by users where backward-compatible overwriting is necessary, relying solely on `OpenOptions::create_new(true)` will break functionality (by preventing overwrite entirely), while `create(true).truncate(true)` allows Arbitrary File Overwrite via hardlinks.
+**Learning:** To safely support expected file overwriting without exposing the application to hardlink vulnerabilities, writing must be atomic.
+**Prevention:** Generate a temporary file with an unpredictable name (e.g. incorporating a nanosecond timestamp), strictly enforce `OpenOptions::create_new(true)` on that temporary file, write the data, and then use `std::fs::rename` to atomically overwrite the target destination file.
