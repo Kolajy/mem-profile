@@ -14,3 +14,6 @@
 ## 2024-07-27 - [TUI List Scroll Position Indicators]
 **Learning:** Terminal tables and lists lack native OS scrollbars. When users scroll through a long list using keys (like `j/k`), they easily lose their sense of position within the dataset, leading to poor orientation and UX.
 **Action:** Always include an explicit positional indicator (e.g., "Item 5 of 50") in the title or header of scrollable TUI widgets to provide continuous orientation without consuming extra row space.
+## 2024-07-28 - [TUI Lifecycle Empty States]
+**Learning:** When designing empty states for real-time monitoring TUI components, generic placeholder text (like 'Waiting for data...') can become inaccurate and confusing if the underlying target process has already terminated without generating data.
+**Action:** Always conditionally render empty state copy based on the process lifecycle. If the process has exited (`process_exited == true`), explicitly state that no data was collected rather than implying the system is still waiting.

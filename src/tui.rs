@@ -437,7 +437,12 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         let block = Block::default()
             .title("RSS Timeline (Last 60s)")
             .borders(Borders::ALL);
-        let info = ratatui::widgets::Paragraph::new("Waiting for initial memory reading...")
+        let msg = if app.process_exited {
+            "No memory data collected."
+        } else {
+            "Waiting for initial memory reading..."
+        };
+        let info = ratatui::widgets::Paragraph::new(msg)
             .block(block)
             .style(Style::default().fg(Color::DarkGray))
             .alignment(ratatui::layout::Alignment::Center);
@@ -532,11 +537,14 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         .bottom_margin(1);
 
     let rows: Vec<Row> = if items.is_empty() {
-        vec![Row::new(vec![Cell::from(
-            "No allocations tracked. Waiting for data...",
-        )
-        .style(Style::default().fg(Color::DarkGray))])
-        .height(1)]
+        let msg = if app.process_exited {
+            "No memory data collected."
+        } else {
+            "No allocations tracked. Waiting for data..."
+        };
+        vec![Row::new(vec![Cell::from(msg)])
+            .style(Style::default().fg(Color::DarkGray))
+            .height(1)]
     } else {
         items
             .iter()
