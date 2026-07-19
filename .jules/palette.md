@@ -20,3 +20,6 @@
 ## 2024-07-29 - [TUI Table Numeric Column Alignment]
 **Learning:** In terminal user interfaces, rendering tabular data with default left alignment for numeric columns (like memory size or allocation counts) makes it difficult for users to quickly scan and compare magnitudes.
 **Action:** Always right-align numeric columns and their corresponding headers in TUI tables to improve scannability and align with standard data presentation practices.
+## 2024-07-30 - [TUI Keyboard Accessibility]
+**Learning:** TUI lists mapping only single-item step keys (e.g., j/k or up/down) create friction when users need to scroll through large datasets quickly, negatively impacting UX and accessibility.
+**Action:** Always map standard pagination and boundary keys (PageUp, PageDown, Home, End) alongside single-step keys to ensure efficient keyboard navigation in TUI scrollable components.
