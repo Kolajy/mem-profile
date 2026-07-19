@@ -547,8 +547,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
 
     let header_cells = vec![
         Cell::from("Backtrace").style(Style::default().fg(Color::Yellow)),
-        Cell::from(size_header).style(size_style),
-        Cell::from(count_header).style(count_style),
+        Cell::from(ratatui::text::Line::from(size_header).alignment(ratatui::layout::Alignment::Right)).style(size_style),
+        Cell::from(ratatui::text::Line::from(count_header).alignment(ratatui::layout::Alignment::Right)).style(count_style),
     ];
 
     let header = Row::new(header_cells)
@@ -572,8 +572,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
                 let cells = vec![
                     // Zero-allocation: use as_str() instead of trace.clone() to prevent string allocation per table row every frame.
                     Cell::from(trace.as_str()),
-                    Cell::from(format_bytes(*size as f64)),
-                    Cell::from(count.to_string()),
+                    Cell::from(ratatui::text::Line::from(format_bytes(*size as f64)).alignment(ratatui::layout::Alignment::Right)),
+                    Cell::from(ratatui::text::Line::from(count.to_string()).alignment(ratatui::layout::Alignment::Right)),
                 ];
                 Row::new(cells).height(1)
             })

@@ -17,3 +17,6 @@
 ## 2024-07-28 - [TUI Lifecycle Empty States]
 **Learning:** When designing empty states for real-time monitoring TUI components, generic placeholder text (like 'Waiting for data...') can become inaccurate and confusing if the underlying target process has already terminated without generating data.
 **Action:** Always conditionally render empty state copy based on the process lifecycle. If the process has exited (`process_exited == true`), explicitly state that no data was collected rather than implying the system is still waiting.
+## 2024-07-29 - [TUI Table Numeric Column Alignment]
+**Learning:** In terminal user interfaces, rendering tabular data with default left alignment for numeric columns (like memory size or allocation counts) makes it difficult for users to quickly scan and compare magnitudes.
+**Action:** Always right-align numeric columns and their corresponding headers in TUI tables to improve scannability and align with standard data presentation practices.
