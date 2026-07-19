@@ -605,7 +605,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         ("Count", Style::default().fg(Color::Yellow))
     };
 
-    let header_cells = vec![
+    // Bolt: Zero-allocation optimization: Use array instead of vec! to prevent heap allocations for table headers every render tick.
+    let header_cells = [
         Cell::from("Backtrace").style(Style::default().fg(Color::Yellow)),
         Cell::from(ratatui::text::Line::from(size_header).alignment(ratatui::layout::Alignment::Right)).style(size_style),
         Cell::from(ratatui::text::Line::from(count_header).alignment(ratatui::layout::Alignment::Right)).style(count_style),
@@ -622,14 +623,15 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         } else {
             "No allocations tracked. Waiting for data..."
         };
-        vec![Row::new(vec![Cell::from(msg)])
+        vec![Row::new([Cell::from(msg)])
             .style(Style::default().fg(Color::DarkGray))
             .height(1)]
     } else {
         items
             .iter()
             .map(|(trace, size, count)| {
-                let cells = vec![
+                // Bolt: Zero-allocation optimization: Use array instead of vec! to prevent `O(N)` heap allocations per table row every render frame.
+                let cells = [
                     // Zero-allocation: use as_str() instead of trace.clone() to prevent string allocation per table row every frame.
                     Cell::from(trace.as_str()),
                     Cell::from(ratatui::text::Line::from(format_bytes(*size as f64)).alignment(ratatui::layout::Alignment::Right)),

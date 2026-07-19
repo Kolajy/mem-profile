@@ -31,3 +31,6 @@
 ## 2024-11-21 - Avoid clone for cached FramePtrs by implementing Borrow
 **Learning:** In the `get_active_allocations` function, although `FramePtrs` had its own type wrapping the vector of raw pointers, we couldn't query the `HashMap` keyed by `FramePtrs` with a slice without allocating due to the missing `Borrow` trait implementation. This caused unnecessary `clone()` operations for backtraces that were already memoized, adding significant CPU overhead during the TUI loop.
 **Action:** Always implement `std::borrow::Borrow<[T]>` for wrapper structs containing `Vec<T>` (like `FramePtrs`) to allow zero-allocation queries against caches using `.as_slice()` directly.
+## 2025-07-19 - Zero-Allocation Ratatui Table Rows
+**Learning:** Using `let cells = vec![...]` directly within `ratatui::widgets::Row::new(...)` inside the frequent TUI render loops causes an `O(N)` dynamic heap allocation issue for every frame (where N is the number of rows), degrading performance and creating garbage collection pressure.
+**Action:** Since `ratatui::widgets::Row::new` accepts any `IntoIterator`, always use standard array syntax `let cells = [...]` when passing statically sized collections of table cells to prevent any dynamic `Vec` allocations during rendering.
