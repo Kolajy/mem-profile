@@ -28,3 +28,6 @@
 ## 2025-01-22 - Zero-Allocation statm Parsing in Polling Loops
 **Learning:** Using `std::fs::read_to_string` inside tight polling loops (e.g., reading `/proc/{pid}/statm` every 10ms) causes constant dynamic string allocations and garbage collection overhead. Since the `statm` file content is very small, allocating a heap string every read causes significant memory bloat and CPU usage.
 **Action:** Always use a stack-allocated buffer (`[0u8; 128]`) with `std::fs::File::open` and `.read()` when continuously polling small pseudo-files like `/proc/...` to ensure zero heap allocations per tick.
+## 2024-11-21 - Avoid clone for cached FramePtrs by implementing Borrow
+**Learning:** In the `get_active_allocations` function, although `FramePtrs` had its own type wrapping the vector of raw pointers, we couldn't query the `HashMap` keyed by `FramePtrs` with a slice without allocating due to the missing `Borrow` trait implementation. This caused unnecessary `clone()` operations for backtraces that were already memoized, adding significant CPU overhead during the TUI loop.
+**Action:** Always implement `std::borrow::Borrow<[T]>` for wrapper structs containing `Vec<T>` (like `FramePtrs`) to allow zero-allocation queries against caches using `.as_slice()` directly.

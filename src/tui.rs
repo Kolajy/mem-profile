@@ -152,6 +152,12 @@ struct FramePtrs(Vec<*mut std::ffi::c_void>);
 unsafe impl Send for FramePtrs {}
 unsafe impl Sync for FramePtrs {}
 
+impl std::borrow::Borrow<[*mut std::ffi::c_void]> for FramePtrs {
+    fn borrow(&self) -> &[*mut std::ffi::c_void] {
+        &self.0
+    }
+}
+
 impl App {
     fn new(pid: u32) -> Self {
         Self {
@@ -278,22 +284,30 @@ fn get_active_allocations(
         in_alloc.set(true);
 
         let mut raw_allocs: HashMap<Vec<*mut std::ffi::c_void>, (usize, usize)> = HashMap::new();
+        let mut folded: HashMap<Arc<String>, (usize, usize)> = HashMap::new();
 
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
                 for (_, meta) in shard.iter() {
-                    // Avoid unconditional clone() of the backtrace Vec by checking if it exists first.
-                    if let Some(entry) = raw_allocs.get_mut(&meta.backtrace) {
-                        entry.0 += meta.size;
-                        entry.1 += 1;
+                    // Bolt: Avoid cloning `meta.backtrace` for already memoized backtraces.
+                    if let Some(cached) = symbol_cache.get(meta.backtrace.as_slice()) {
+                        if let Some(entry) = folded.get_mut(cached) {
+                            entry.0 += meta.size;
+                            entry.1 += 1;
+                        } else {
+                            folded.insert(Arc::clone(cached), (meta.size, 1));
+                        }
                     } else {
-                        raw_allocs.insert(meta.backtrace.clone(), (meta.size, 1));
+                        if let Some(entry) = raw_allocs.get_mut(&meta.backtrace) {
+                            entry.0 += meta.size;
+                            entry.1 += 1;
+                        } else {
+                            raw_allocs.insert(meta.backtrace.clone(), (meta.size, 1));
+                        }
                     }
                 }
             }
         }
-
-        let mut folded: HashMap<Arc<String>, (usize, usize)> = HashMap::new();
         for (frames, (total_size, count)) in raw_allocs {
             // Bolt: Symbolication is extremely expensive. Memoize the resolved string representation
             // of raw backtrace pointers to prevent severe CPU bottlenecks during the TUI render loop.
