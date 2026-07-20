@@ -23,3 +23,7 @@
 ## 2024-07-30 - [TUI Keyboard Accessibility]
 **Learning:** TUI lists mapping only single-item step keys (e.g., j/k or up/down) create friction when users need to scroll through large datasets quickly, negatively impacting UX and accessibility.
 **Action:** Always map standard pagination and boundary keys (PageUp, PageDown, Home, End) alongside single-step keys to ensure efficient keyboard navigation in TUI scrollable components.
+
+## 2024-07-20 - TUI Table Selection State Management
+**Learning:** In real-time updating TUI lists (like tables that frequently redraw based on changing data sizes), users easily lose their place or encounter silent navigation bugs if the selection index outpaces the changing dataset bounds or if the list sorts change dynamically under them.
+**Action:** Always auto-select an item on initial data load, strictly clamp the `TableState` selection index within the bounds of `items.len()` on every render cycle, and explicitly reset selection to index `0` whenever a new sort order is applied to maintain context.
