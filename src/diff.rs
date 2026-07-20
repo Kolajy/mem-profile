@@ -117,7 +117,21 @@ fn parse_json_array(json: &str) -> HashMap<String, AllocationStats> {
     result
 }
 
+fn validate_file_for_reading(path: &str) {
+    let meta = fs::metadata(path).unwrap_or_else(|e| panic!("Failed to read metadata for {}: {}", path, e));
+    if !meta.is_file() {
+        panic!("{} is not a regular file", path);
+    }
+    let max_size = 256 * 1024 * 1024; // 256 MB
+    if meta.len() > max_size {
+        panic!("{} exceeds maximum allowed size (256 MB)", path);
+    }
+}
+
 pub fn diff_snapshots(path1: &str, path2: &str) {
+    validate_file_for_reading(path1);
+    validate_file_for_reading(path2);
+
     let file1_content = fs::read_to_string(path1).expect("Failed to open path1");
     let file2_content = fs::read_to_string(path2).expect("Failed to open path2");
 
