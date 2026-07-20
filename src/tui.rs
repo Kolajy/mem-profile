@@ -533,7 +533,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         };
         let info = ratatui::widgets::Paragraph::new(msg)
             .block(block)
-            .style(Style::default().fg(Color::DarkGray))
+            .style(Style::default().fg(Color::Gray))
             .alignment(ratatui::layout::Alignment::Center);
         f.render_widget(info, chunks[1]);
     } else {
@@ -633,7 +633,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
             "No allocations tracked. Waiting for data..."
         };
         vec![Row::new([Cell::from(msg)])
-            .style(Style::default().fg(Color::DarkGray))
+            .style(Style::default().fg(Color::Gray))
             .height(1)]
     } else {
         items
