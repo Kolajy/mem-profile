@@ -15,3 +15,8 @@
 **Vulnerability:** When writing to paths provided by users where backward-compatible overwriting is necessary, relying solely on `OpenOptions::create_new(true)` will break functionality (by preventing overwrite entirely), while `create(true).truncate(true)` allows Arbitrary File Overwrite via hardlinks.
 **Learning:** To safely support expected file overwriting without exposing the application to hardlink vulnerabilities, writing must be atomic.
 **Prevention:** Generate a temporary file with an unpredictable name (e.g. incorporating a nanosecond timestamp), strictly enforce `OpenOptions::create_new(true)` on that temporary file, write the data, and then use `std::fs::rename` to atomically overwrite the target destination file.
+
+## 2024-07-20 - [Prevent Resource Exhaustion (DoS) on File Read]
+**Vulnerability:** The `diff_snapshots` function in `src/diff.rs` uses `fs::read_to_string` to read files provided by the user without validating their type or size. This allows an attacker to supply special files (like `/dev/zero`) or enormous files, causing the application to read continuously until memory exhaustion (OOM), leading to a Denial of Service (DoS).
+**Learning:** Functions that ingest arbitrary files provided by users must validate file metadata to ensure they are standard files and within safe size limits before attempting to load their entire contents into memory.
+**Prevention:** Always verify `fs::metadata(path).is_file()` and assert a maximum reasonable file length (e.g., `< 256MB`) before using `fs::read_to_string` on untrusted paths.
