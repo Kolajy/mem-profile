@@ -16,7 +16,7 @@ use ratatui::{
     Frame, Terminal,
 };
 use std::{
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
     fs::File,
     io::{self, Read},
     path::Path,
@@ -59,10 +59,10 @@ pub fn run() {
                 if let Some(rss_bytes) = get_rss_bytes(pid, page_size) {
                     let mut app = app_clone.lock().unwrap();
                     let elapsed = start_time.elapsed().as_secs_f64();
-                    app.rss_history.push((elapsed, rss_bytes as f64));
+                    app.rss_history.push_back((elapsed, rss_bytes as f64));
                     // keep only last N points to avoid unbounded growth
                     if app.rss_history.len() > 1000 {
-                        app.rss_history.remove(0);
+                        app.rss_history.pop_front();
                     }
                 } else {
                     // Process died or can't read
@@ -133,7 +133,7 @@ fn get_rss_bytes(pid: u32, page_size: u64) -> Option<u64> {
 
 struct App {
     pid: u32,
-    rss_history: Vec<(f64, f64)>, // (time_s, bytes)
+    rss_history: VecDeque<(f64, f64)>, // (time_s, bytes)
     is_paused: bool,
     process_exited: bool,
     table_state: TableState,
@@ -162,7 +162,7 @@ impl App {
     fn new(pid: u32) -> Self {
         Self {
             pid,
-            rss_history: Vec::new(),
+            rss_history: VecDeque::new(),
             is_paused: false,
             process_exited: false,
             table_state: TableState::default(),
@@ -509,7 +509,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         .style(Style::default().fg(Color::White))
         .title(title);
 
-    let current_rss = if let Some(last) = app.rss_history.last() {
+    let current_rss = if let Some(last) = app.rss_history.back() {
         format_bytes(last.1)
     } else {
         "N/A".to_string()
@@ -538,7 +538,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         f.render_widget(info, chunks[1]);
     } else {
         // Zero-allocation: take a reference to the slice instead of unconditionally cloning the entire history Vec every frame.
-        let data: &[(f64, f64)] = &app.rss_history;
+        let data: &[(f64, f64)] = app.rss_history.make_contiguous();
         let max_time = data.last().map(|d| d.0).unwrap_or(10.0).max(10.0);
         let min_time = if max_time > 60.0 {
             max_time - 60.0

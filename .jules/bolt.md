@@ -34,3 +34,6 @@
 ## 2025-07-19 - Zero-Allocation Ratatui Table Rows
 **Learning:** Using `let cells = vec![...]` directly within `ratatui::widgets::Row::new(...)` inside the frequent TUI render loops causes an `O(N)` dynamic heap allocation issue for every frame (where N is the number of rows), degrading performance and creating garbage collection pressure.
 **Action:** Since `ratatui::widgets::Row::new` accepts any `IntoIterator`, always use standard array syntax `let cells = [...]` when passing statically sized collections of table cells to prevent any dynamic `Vec` allocations during rendering.
+## 2024-07-21 - O(1) TUI memory sampling history removal
+**Learning:** Using `Vec::remove(0)` to manage a sliding window for TUI history graphs caused O(N) memory shifting on every tick, adding unnecessary performance overhead to the background monitoring thread.
+**Action:** When implementing sliding windows for historical UI data (like timeline charts in `ratatui`), always use `std::collections::VecDeque`. You can maintain zero-allocation rendering by calling `.make_contiguous()` to provide a flat slice directly to `ratatui` widgets.
