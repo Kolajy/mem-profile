@@ -304,6 +304,9 @@ fn run_app<B: Backend>(
                     }
                     KeyCode::Char('r') => {
                         app_lock.sort_by_size = !app_lock.sort_by_size;
+                        if !items.is_empty() {
+                            app_lock.table_state.select(Some(0));
+                        }
                     }
                     KeyCode::Down | KeyCode::Char('j') => {
                         app_lock.next(items.len());
@@ -422,6 +425,12 @@ fn get_active_allocations(
 fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     if items.is_empty() {
         app.table_state.select(None);
+    } else {
+        match app.table_state.selected() {
+            None => app.table_state.select(Some(0)),
+            Some(i) if i >= items.len() => app.table_state.select(Some(items.len() - 1)),
+            _ => {}
+        }
     }
     let chunks = Layout::default()
         .direction(Direction::Vertical)
