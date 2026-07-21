@@ -57,7 +57,7 @@ fn parse_json_map(json: &str) -> HashMap<String, AllocationStats> {
         // parts[i-1] ends with the key string
         let prev = parts[i - 1];
         let key_start = prev.rfind('"').unwrap_or(0);
-        let key = prev[key_start + 1..].to_string();
+        let key = prev.get(key_start + 1..).unwrap_or("").to_string();
 
         // parts[i] starts with the size, followed by ,"count":
         let current = parts[i];
@@ -88,8 +88,12 @@ fn parse_json_array(json: &str) -> HashMap<String, AllocationStats> {
         let current = parts[i];
 
         let stack_start = current.find('"').unwrap_or(0) + 1;
-        let stack_end = current[stack_start..].find('"').unwrap_or(0) + stack_start;
-        let stack = current[stack_start..stack_end].to_string();
+        let stack = if let Some(sub) = current.get(stack_start..) {
+            let end_offset = sub.find('"').unwrap_or(0);
+            sub.get(..end_offset).unwrap_or("").to_string()
+        } else {
+            "".to_string()
+        };
 
         let size_idx = current.find("\"size\":").unwrap_or(current.len());
         let size = if size_idx < current.len() {
@@ -117,23 +121,48 @@ fn parse_json_array(json: &str) -> HashMap<String, AllocationStats> {
     result
 }
 
-fn validate_file_for_reading(path: &str) {
-    let meta = fs::metadata(path).unwrap_or_else(|e| panic!("Failed to read metadata for {}: {}", path, e));
+fn validate_file_for_reading(path: &str) -> std::io::Result<()> {
+    let meta = fs::metadata(path)?;
     if !meta.is_file() {
-        panic!("{} is not a regular file", path);
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("{} is not a regular file", path),
+        ));
     }
     let max_size = 256 * 1024 * 1024; // 256 MB
     if meta.len() > max_size {
-        panic!("{} exceeds maximum allowed size (256 MB)", path);
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("{} exceeds maximum allowed size (256 MB)", path),
+        ));
     }
+    Ok(())
 }
 
 pub fn diff_snapshots(path1: &str, path2: &str) {
-    validate_file_for_reading(path1);
-    validate_file_for_reading(path2);
+    if let Err(e) = validate_file_for_reading(path1) {
+        eprintln!("Error reading {}: {}", path1, e);
+        return;
+    }
+    if let Err(e) = validate_file_for_reading(path2) {
+        eprintln!("Error reading {}: {}", path2, e);
+        return;
+    }
 
-    let file1_content = fs::read_to_string(path1).expect("Failed to open path1");
-    let file2_content = fs::read_to_string(path2).expect("Failed to open path2");
+    let file1_content = match fs::read_to_string(path1) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Error reading {}: {}", path1, e);
+            return;
+        }
+    };
+    let file2_content = match fs::read_to_string(path2) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Error reading {}: {}", path2, e);
+            return;
+        }
+    };
 
     // Try both formats, whichever yields elements
     let mut snap1 = parse_json_map(&file1_content);
