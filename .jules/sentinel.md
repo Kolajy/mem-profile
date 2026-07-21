@@ -20,3 +20,8 @@
 **Vulnerability:** The `diff_snapshots` function in `src/diff.rs` uses `fs::read_to_string` to read files provided by the user without validating their type or size. This allows an attacker to supply special files (like `/dev/zero`) or enormous files, causing the application to read continuously until memory exhaustion (OOM), leading to a Denial of Service (DoS).
 **Learning:** Functions that ingest arbitrary files provided by users must validate file metadata to ensure they are standard files and within safe size limits before attempting to load their entire contents into memory.
 **Prevention:** Always verify `fs::metadata(path).is_file()` and assert a maximum reasonable file length (e.g., `< 256MB`) before using `fs::read_to_string` on untrusted paths.
+
+## 2024-05-18 - [HIGH] Fix panic vulnerabilities in JSON parsing and file reading
+**Vulnerability:** DoS (Denial of Service) via threads panicking due to out-of-bounds slice indexing when parsing malformed JSON, and panics when trying to read non-existent or inaccessible files via `unwrap_or_else(|e| panic!(...))` and `expect()`.
+**Learning:** Naive bounds calculation using `String::find` offset without length checks is unsafe. Similarly, hard exit via panics instead of returning `std::io::Result` exposes CLI applications to abrupt termination or resource exhaustion (DoS vectors).
+**Prevention:** Use safer abstraction methods like `.get(start..end)` to check bounds explicitly. Bubble up runtime errors using `Result` instead of using `panic!`, `unwrap()`, or `expect()` when processing external, unpredictable inputs like files or network responses.
