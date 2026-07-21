@@ -6,6 +6,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use num_format::{Locale, ToFormattedString};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -652,7 +653,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
                             .alignment(ratatui::layout::Alignment::Right),
                     ),
                     Cell::from(
-                        ratatui::text::Line::from(count.to_string())
+                        ratatui::text::Line::from(count.to_formatted_string(&Locale::en))
                             .alignment(ratatui::layout::Alignment::Right),
                     ),
                 ];
