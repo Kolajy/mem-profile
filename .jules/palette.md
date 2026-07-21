@@ -27,3 +27,6 @@
 ## 2024-07-20 - TUI Table Selection State Management
 **Learning:** In real-time updating TUI lists (like tables that frequently redraw based on changing data sizes), users easily lose their place or encounter silent navigation bugs if the selection index outpaces the changing dataset bounds or if the list sorts change dynamically under them.
 **Action:** Always auto-select an item on initial data load, strictly clamp the `TableState` selection index within the bounds of `items.len()` on every render cycle, and explicitly reset selection to index `0` whenever a new sort order is applied to maintain context.
+## 2024-07-31 - [TUI Table Number Formatting]
+**Learning:** Raw large numbers (like `1000000`) in TUI tables are extremely difficult for users to scan and comprehend quickly.
+**Action:** Always format large numeric data with thousands separators (e.g., using the `num-format` crate) to significantly improve readability and UX.

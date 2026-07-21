@@ -6,6 +6,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use num_format::{Locale, ToFormattedString};
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -644,7 +645,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
                     // Zero-allocation: use as_str() instead of trace.clone() to prevent string allocation per table row every frame.
                     Cell::from(trace.as_str()),
                     Cell::from(ratatui::text::Line::from(format_bytes(*size as f64)).alignment(ratatui::layout::Alignment::Right)),
-                    Cell::from(ratatui::text::Line::from(count.to_string()).alignment(ratatui::layout::Alignment::Right)),
+                    Cell::from(ratatui::text::Line::from(count.to_formatted_string(&Locale::en)).alignment(ratatui::layout::Alignment::Right)),
                 ];
                 Row::new(cells).height(1)
             })
