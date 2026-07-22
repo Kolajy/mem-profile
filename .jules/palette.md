@@ -30,3 +30,7 @@
 ## 2024-08-01 - [TUI Thousands Separators]
 **Learning:** For TUI tables displaying large numeric data (e.g., memory counts or sizes), users struggle to parse large string values at a glance if they lack standard thousands separators.
 **Action:** Always format numerical data with thousands separators (e.g., using `num-format` with `Locale::en`) to significantly enhance readability and scannability of large values.
+
+## 2026-07-22 - [TUI Flash Messages Truncation]
+**Learning:** In terminal user interfaces with strict width constraints (e.g., 80-column defaults), temporary flash messages (like success toasts) can easily be horizontally truncated if static lower-priority information (like permanent keybind hints) persistently occupies the space.
+**Action:** Conditionally hide lower-priority permanent information (like static keybind hints) when temporary flash messages are active to ensure the feedback is prominently visible without truncating.
