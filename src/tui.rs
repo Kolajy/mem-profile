@@ -48,6 +48,8 @@ pub fn run() {
     let monitor_thread = thread::spawn(move || {
         let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) as u64 };
         let start_time = Instant::now();
+        // Bolt: Pre-allocate the statm_path string to prevent dynamic allocation on every polling tick
+        let statm_path = format!("/proc/{}/statm", pid);
 
         while is_running_clone.load(Ordering::Relaxed) {
             let is_paused;
@@ -57,7 +59,7 @@ pub fn run() {
             }
 
             if !is_paused {
-                if let Some(rss_bytes) = get_rss_bytes(pid, page_size) {
+                if let Some(rss_bytes) = get_rss_bytes(pid, page_size, &statm_path) {
                     let mut app = app_clone.lock().unwrap();
                     let elapsed = start_time.elapsed().as_secs_f64();
                     app.rss_history.push_back((elapsed, rss_bytes as f64));
@@ -96,11 +98,11 @@ pub fn run() {
     }
 }
 
-fn get_rss_bytes(pid: u32, page_size: u64) -> Option<u64> {
+#[allow(unused_variables)]
+fn get_rss_bytes(pid: u32, page_size: u64, statm_path: &str) -> Option<u64> {
     #[cfg(target_os = "linux")]
     {
-        let statm_path = format!("/proc/{}/statm", pid);
-        if let Ok(mut file) = File::open(&statm_path) {
+        if let Ok(mut file) = File::open(statm_path) {
             let mut buf = [0u8; 128];
             if let Ok(n) = file.read(&mut buf) {
                 if let Ok(content) = std::str::from_utf8(&buf[..n]) {
@@ -133,7 +135,10 @@ fn get_rss_bytes(pid: u32, page_size: u64) -> Option<u64> {
 }
 
 struct App {
+    #[allow(dead_code)]
     pid: u32,
+    // Bolt: Pre-allocate TUI Title string to eliminate string formatting in UI render loop
+    pid_title: String,
     rss_history: VecDeque<(f64, f64)>, // (time_s, bytes)
     is_paused: bool,
     process_exited: bool,
@@ -163,6 +168,7 @@ impl App {
     fn new(pid: u32) -> Self {
         Self {
             pid,
+            pid_title: format!(" Mem-Profile TUI | PID: {} ", pid),
             rss_history: VecDeque::new(),
             is_paused: false,
             process_exited: false,
@@ -466,7 +472,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         .fg(Color::Cyan)
         .add_modifier(Modifier::BOLD);
     let mut spans = vec![
-        Span::raw(format!(" Mem-Profile TUI | PID: {} ", app.pid)),
+        Span::raw(app.pid_title.as_str()),
         status_span,
         Span::raw(" | Keys: "),
         Span::styled("[p/Space]", key_style),

@@ -37,3 +37,6 @@
 ## 2024-07-21 - O(1) TUI memory sampling history removal
 **Learning:** Using `Vec::remove(0)` to manage a sliding window for TUI history graphs caused O(N) memory shifting on every tick, adding unnecessary performance overhead to the background monitoring thread.
 **Action:** When implementing sliding windows for historical UI data (like timeline charts in `ratatui`), always use `std::collections::VecDeque`. You can maintain zero-allocation rendering by calling `.make_contiguous()` to provide a flat slice directly to `ratatui` widgets.
+## 2025-01-22 - Avoid `format!` in TUI Render Loops
+**Learning:** Calling `format!` on every tick of a terminal UI render loop (like formatting a `PID` into a window title or creating a `/proc/{pid}/statm` file path string for polling) causes massive, continuous string allocation overhead and degrades application performance over time by stressing the global allocator.
+**Action:** When a formatted string depends entirely on static data that doesn't change during the loop's execution (like a process PID), always pre-allocate the formatted string once during initialization (e.g. in `App::new` or before the polling loop begins) and reuse a reference to it in the hot loop.
