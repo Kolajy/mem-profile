@@ -471,12 +471,11 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     let key_style = Style::default()
         .fg(Color::Cyan)
         .add_modifier(Modifier::BOLD);
-    let mut spans = vec![
-        Span::raw(app.pid_title.as_str()),
-        status_span,
-    ];
+    let mut spans = vec![Span::raw(app.pid_title.as_str()), status_span];
 
-    let show_flash = app.last_snapshot_time.map_or(false, |time| time.elapsed() < Duration::from_secs(3));
+    let show_flash = app
+        .last_snapshot_time
+        .map_or(false, |time| time.elapsed() < Duration::from_secs(3));
 
     if show_flash {
         let msg = if let Some(ref name) = app.last_snapshot_name {
@@ -554,7 +553,14 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
             0.0
         };
 
-        let max_bytes = data
+        // Bolt: Filter data to only include points within the visible time window
+        // to avoid having Ratatui's Chart widget process up to 1000 off-screen points,
+        // and to ensure max_bytes accurately scales the Y-axis to the visible data.
+        // Use saturating_sub(1) to keep one off-screen point for drawing the line entering the chart.
+        let start_idx = data.partition_point(|d| d.0 < min_time).saturating_sub(1);
+        let visible_data = &data[start_idx..];
+
+        let max_bytes = visible_data
             .iter()
             .map(|d| d.1)
             .fold(0.0, f64::max)
