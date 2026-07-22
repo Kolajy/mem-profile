@@ -474,37 +474,40 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     let mut spans = vec![
         Span::raw(app.pid_title.as_str()),
         status_span,
-        Span::raw(" | Keys: "),
-        Span::styled("[p/Space]", key_style),
-        Span::raw(if app.is_paused {
-            " resume, "
-        } else {
-            " pause, "
-        }),
-        Span::styled("[s]", key_style),
-        Span::raw("napshot, "),
-        Span::styled("[r]", key_style),
-        Span::raw("e-sort, "),
-        Span::styled("[q]", key_style),
-        Span::raw("uit, "),
-        Span::styled("[↑↓/PgUp/PgDn]", key_style),
-        Span::raw(" nav "),
     ];
 
-    if let Some(time) = app.last_snapshot_time {
-        if time.elapsed() < Duration::from_secs(3) {
-            let msg = if let Some(ref name) = app.last_snapshot_name {
-                format!(" | Snapshot saved to {}! ", name)
+    let show_flash = app.last_snapshot_time.map_or(false, |time| time.elapsed() < Duration::from_secs(3));
+
+    if show_flash {
+        let msg = if let Some(ref name) = app.last_snapshot_name {
+            format!(" | Snapshot saved to {}! ", name)
+        } else {
+            " | Snapshot Saved! ".to_string()
+        };
+        spans.push(Span::styled(
+            msg,
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        ));
+    } else {
+        spans.extend(vec![
+            Span::raw(" | Keys: "),
+            Span::styled("[p/Space]", key_style),
+            Span::raw(if app.is_paused {
+                " resume, "
             } else {
-                " | Snapshot Saved! ".to_string()
-            };
-            spans.push(Span::styled(
-                msg,
-                Style::default()
-                    .fg(Color::Green)
-                    .add_modifier(Modifier::BOLD),
-            ));
-        }
+                " pause, "
+            }),
+            Span::styled("[s]", key_style),
+            Span::raw("napshot, "),
+            Span::styled("[r]", key_style),
+            Span::raw("e-sort, "),
+            Span::styled("[q]", key_style),
+            Span::raw("uit, "),
+            Span::styled("[↑↓/PgUp/PgDn]", key_style),
+            Span::raw(" nav "),
+        ]);
     }
 
     let title = Line::from(spans);
