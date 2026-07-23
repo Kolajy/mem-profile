@@ -575,7 +575,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
             .marker(symbols::Marker::Braille)
             .graph_type(GraphType::Line)
             .style(Style::default().fg(Color::Cyan))
-            .data(data)];
+            .data(visible_data)];
 
         let chart = Chart::new(datasets)
             .block(
