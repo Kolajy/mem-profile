@@ -62,7 +62,11 @@ pub fn run() {
                 if let Some(rss_bytes) = get_rss_bytes(pid, page_size, &statm_path) {
                     let mut app = app_clone.lock().unwrap();
                     let elapsed = start_time.elapsed().as_secs_f64();
-                    app.rss_history.push_back((elapsed, rss_bytes as f64));
+                    let rss_f64 = rss_bytes as f64;
+                    app.rss_history.push_back((elapsed, rss_f64));
+                    if rss_f64 > app.peak_rss {
+                        app.peak_rss = rss_f64;
+                    }
                     // keep only last N points to avoid unbounded growth
                     if app.rss_history.len() > 1000 {
                         app.rss_history.pop_front();
@@ -140,6 +144,7 @@ struct App {
     // Bolt: Pre-allocate TUI Title string to eliminate string formatting in UI render loop
     pid_title: String,
     rss_history: VecDeque<(f64, f64)>, // (time_s, bytes)
+    peak_rss: f64,
     is_paused: bool,
     process_exited: bool,
     table_state: TableState,
@@ -170,6 +175,7 @@ impl App {
             pid,
             pid_title: format!(" Mem-Profile TUI | PID: {} ", pid),
             rss_history: VecDeque::new(),
+            peak_rss: 0.0,
             is_paused: false,
             process_exited: false,
             table_state: TableState::default(),
@@ -526,7 +532,30 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         "N/A".to_string()
     };
 
-    let info = ratatui::widgets::Paragraph::new(format!("Current RSS: {}", current_rss))
+    let peak_rss_str = if app.peak_rss > 0.0 {
+        format_bytes(app.peak_rss)
+    } else {
+        "N/A".to_string()
+    };
+
+    let info_line = Line::from(vec![
+        Span::raw("Current RSS: "),
+        Span::styled(
+            current_rss,
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" | Peak RSS: "),
+        Span::styled(
+            peak_rss_str,
+            Style::default()
+                .fg(Color::Magenta)
+                .add_modifier(Modifier::BOLD),
+        ),
+    ]);
+
+    let info = ratatui::widgets::Paragraph::new(info_line)
         .block(title_block)
         .alignment(ratatui::layout::Alignment::Center);
 
