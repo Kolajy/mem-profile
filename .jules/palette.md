@@ -38,3 +38,7 @@
 ## 2024-08-02 - [TUI Irrelevant Keybinds]
 **Learning:** Rendering or allowing interaction with keybinds (like pause/resume) when the underlying process state makes those actions impossible (e.g., process exited) causes cognitive dissonance and user confusion.
 **Action:** Always conditionally hide and ignore keybinds based on the application's lifecycle state to prevent suggesting impossible actions.
+
+## 2024-08-03 - [TUI Primary Metric Highlighting & Peak Tracking]
+**Learning:** In terminal user interfaces where historical data rolls off-screen (e.g., rolling time windows), users easily lose track of the session's overall maximums if peak values are not explicitly tracked and displayed. Furthermore, primary metrics styled as plain text can blend into structural borders, reducing visual hierarchy.
+**Action:** Always maintain and display historical peak metrics in the UI state when utilizing rolling time windows. Use distinct visual styling (e.g., bold colors via `Line`/`Span`) to separate primary data points from surrounding structural or boilerplate text.
