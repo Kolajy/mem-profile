@@ -100,7 +100,11 @@ fn parse_json_array(json: &str) -> HashMap<String, AllocationStats> {
         let size = if size_idx < current.len() {
             if let Some(rem) = current.get(size_idx + 7..) {
                 let end = rem.find(',').unwrap_or(rem.find('}').unwrap_or(rem.len()));
-                rem.get(..end).unwrap_or("").trim().parse::<usize>().unwrap_or(0)
+                rem.get(..end)
+                    .unwrap_or("")
+                    .trim()
+                    .parse::<usize>()
+                    .unwrap_or(0)
             } else {
                 0
             }
@@ -112,7 +116,11 @@ fn parse_json_array(json: &str) -> HashMap<String, AllocationStats> {
         let count = if count_idx < current.len() {
             if let Some(rem) = current.get(count_idx + 8..) {
                 let end = rem.find(',').unwrap_or(rem.find('}').unwrap_or(rem.len()));
-                rem.get(..end).unwrap_or("").trim().parse::<usize>().unwrap_or(0)
+                rem.get(..end)
+                    .unwrap_or("")
+                    .trim()
+                    .parse::<usize>()
+                    .unwrap_or(0)
             } else {
                 0
             }
