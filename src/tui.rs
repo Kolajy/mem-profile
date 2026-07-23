@@ -295,7 +295,9 @@ fn run_app<B: Backend>(
                         return Ok(());
                     }
                     KeyCode::Char('p') | KeyCode::Char(' ') => {
-                        app_lock.is_paused = !app_lock.is_paused;
+                        if !app_lock.process_exited {
+                            app_lock.is_paused = !app_lock.is_paused;
+                        }
                     }
                     KeyCode::Char('s') => {
                         let timestamp = std::time::SystemTime::now()
@@ -490,14 +492,16 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
                 .add_modifier(Modifier::BOLD),
         ));
     } else {
-        spans.extend(vec![
-            Span::raw(" | Keys: "),
-            Span::styled("[p/Space]", key_style),
-            Span::raw(if app.is_paused {
+        spans.push(Span::raw(" | Keys: "));
+        if !app.process_exited {
+            spans.push(Span::styled("[p/Space]", key_style));
+            spans.push(Span::raw(if app.is_paused {
                 " resume, "
             } else {
                 " pause, "
-            }),
+            }));
+        }
+        spans.extend(vec![
             Span::styled("[s]", key_style),
             Span::raw("napshot, "),
             Span::styled("[r]", key_style),

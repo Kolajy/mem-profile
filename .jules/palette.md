@@ -34,3 +34,7 @@
 ## 2026-07-22 - [TUI Flash Messages Truncation]
 **Learning:** In terminal user interfaces with strict width constraints (e.g., 80-column defaults), temporary flash messages (like success toasts) can easily be horizontally truncated if static lower-priority information (like permanent keybind hints) persistently occupies the space.
 **Action:** Conditionally hide lower-priority permanent information (like static keybind hints) when temporary flash messages are active to ensure the feedback is prominently visible without truncating.
+
+## 2024-08-02 - [TUI Irrelevant Keybinds]
+**Learning:** Rendering or allowing interaction with keybinds (like pause/resume) when the underlying process state makes those actions impossible (e.g., process exited) causes cognitive dissonance and user confusion.
+**Action:** Always conditionally hide and ignore keybinds based on the application's lifecycle state to prevent suggesting impossible actions.
