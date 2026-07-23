@@ -62,17 +62,18 @@ fn parse_json_map(json: &str) -> HashMap<String, AllocationStats> {
         // parts[i] starts with the size, followed by ,"count":
         let current = parts[i];
         let size_end_idx = current.find(',').unwrap_or(current.len());
-        let size_str = current[..size_end_idx].trim();
+        let size_str = current.get(..size_end_idx).unwrap_or("").trim();
         let size = size_str.parse::<usize>().unwrap_or(0);
 
         let count_idx = current.find("\"count\":").unwrap_or(current.len());
         if count_idx < current.len() {
-            let rem = &current[count_idx + 8..];
-            let count_end = rem.find('}').unwrap_or(rem.len());
-            let count_str = rem[..count_end].trim();
-            let count = count_str.parse::<usize>().unwrap_or(0);
+            if let Some(rem) = current.get(count_idx + 8..) {
+                let count_end = rem.find('}').unwrap_or(rem.len());
+                let count_str = rem.get(..count_end).unwrap_or("").trim();
+                let count = count_str.parse::<usize>().unwrap_or(0);
 
-            result.insert(key, AllocationStats { size, count });
+                result.insert(key, AllocationStats { size, count });
+            }
         }
     }
 
@@ -97,18 +98,24 @@ fn parse_json_array(json: &str) -> HashMap<String, AllocationStats> {
 
         let size_idx = current.find("\"size\":").unwrap_or(current.len());
         let size = if size_idx < current.len() {
-            let rem = &current[size_idx + 7..];
-            let end = rem.find(',').unwrap_or(rem.find('}').unwrap_or(rem.len()));
-            rem[..end].trim().parse::<usize>().unwrap_or(0)
+            if let Some(rem) = current.get(size_idx + 7..) {
+                let end = rem.find(',').unwrap_or(rem.find('}').unwrap_or(rem.len()));
+                rem.get(..end).unwrap_or("").trim().parse::<usize>().unwrap_or(0)
+            } else {
+                0
+            }
         } else {
             0
         };
 
         let count_idx = current.find("\"count\":").unwrap_or(current.len());
         let count = if count_idx < current.len() {
-            let rem = &current[count_idx + 8..];
-            let end = rem.find(',').unwrap_or(rem.find('}').unwrap_or(rem.len()));
-            rem[..end].trim().parse::<usize>().unwrap_or(0)
+            if let Some(rem) = current.get(count_idx + 8..) {
+                let end = rem.find(',').unwrap_or(rem.find('}').unwrap_or(rem.len()));
+                rem.get(..end).unwrap_or("").trim().parse::<usize>().unwrap_or(0)
+            } else {
+                0
+            }
         } else {
             0
         };
