@@ -107,6 +107,8 @@ pub static REGISTRY: Registry = Registry::new();
 /// A wrapper allocator that profiles memory usage metrics.
 pub struct ProfilingAllocator<A: GlobalAlloc> {
     inner: A,
+    // Bolt: These statistical counters use Ordering::Relaxed because they only track
+    // independent usage metrics and do not act as synchronization primitives.
     active_bytes: AtomicUsize,
     allocation_count: AtomicUsize,
     deallocation_count: AtomicUsize,
@@ -156,9 +158,9 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
                         crate::alert::check_performance_audit(start_time.elapsed());
                     }
                     let size = layout.size();
-                    let current = self.active_bytes.fetch_add(size, Ordering::SeqCst) + size;
+                    let current = self.active_bytes.fetch_add(size, Ordering::Relaxed) + size;
                     crate::alert::check_memory_threshold(current);
-                    self.allocation_count.fetch_add(1, Ordering::SeqCst);
+                    self.allocation_count.fetch_add(1, Ordering::Relaxed);
 
                     let frames = crate::backtrace::capture_raw_backtrace();
                     REGISTRY.insert(ptr as usize, size, frames);
@@ -178,8 +180,8 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
                 let size = layout.size();
                 let removed = REGISTRY.remove(ptr as usize);
                 if removed.is_some() {
-                    self.active_bytes.fetch_sub(size, Ordering::SeqCst);
-                    self.deallocation_count.fetch_add(1, Ordering::SeqCst);
+                    self.active_bytes.fetch_sub(size, Ordering::Relaxed);
+                    self.deallocation_count.fetch_add(1, Ordering::Relaxed);
                 }
                 in_alloc.set(false);
             }
@@ -202,9 +204,9 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
                         crate::alert::check_performance_audit(start_time.elapsed());
                     }
                     let size = layout.size();
-                    let current = self.active_bytes.fetch_add(size, Ordering::SeqCst) + size;
+                    let current = self.active_bytes.fetch_add(size, Ordering::Relaxed) + size;
                     crate::alert::check_memory_threshold(current);
-                    self.allocation_count.fetch_add(1, Ordering::SeqCst);
+                    self.allocation_count.fetch_add(1, Ordering::Relaxed);
 
                     let frames = crate::backtrace::capture_raw_backtrace();
                     REGISTRY.insert(ptr as usize, size, frames);
@@ -237,19 +239,19 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for ProfilingAllocator<A> {
                         if new_size > old_size {
                             let current = self
                                 .active_bytes
-                                .fetch_add(new_size - old_size, Ordering::SeqCst)
+                                .fetch_add(new_size - old_size, Ordering::Relaxed)
                                 + (new_size - old_size);
                             crate::alert::check_memory_threshold(current);
                         } else {
                             self.active_bytes
-                                .fetch_sub(old_size - new_size, Ordering::SeqCst);
+                                .fetch_sub(old_size - new_size, Ordering::Relaxed);
                         }
                         REGISTRY.update_size(ptr as usize, new_size);
                     } else {
                         // Memory block was moved
-                        self.active_bytes.fetch_sub(old_size, Ordering::SeqCst);
+                        self.active_bytes.fetch_sub(old_size, Ordering::Relaxed);
                         let current =
-                            self.active_bytes.fetch_add(new_size, Ordering::SeqCst) + new_size;
+                            self.active_bytes.fetch_add(new_size, Ordering::Relaxed) + new_size;
                         crate::alert::check_memory_threshold(current);
 
                         let old_meta = REGISTRY.remove(ptr as usize);
