@@ -25,3 +25,8 @@
 **Vulnerability:** DoS (Denial of Service) via threads panicking due to out-of-bounds slice indexing when parsing malformed JSON, and panics when trying to read non-existent or inaccessible files via `unwrap_or_else(|e| panic!(...))` and `expect()`.
 **Learning:** Naive bounds calculation using `String::find` offset without length checks is unsafe. Similarly, hard exit via panics instead of returning `std::io::Result` exposes CLI applications to abrupt termination or resource exhaustion (DoS vectors).
 **Prevention:** Use safer abstraction methods like `.get(start..end)` to check bounds explicitly. Bubble up runtime errors using `Result` instead of using `panic!`, `unwrap()`, or `expect()` when processing external, unpredictable inputs like files or network responses.
+
+## 2024-08-11 - [HIGH] Fix panic vulnerabilities in JSON parsing and file reading
+**Vulnerability:** DoS (Denial of Service) via threads panicking due to out-of-bounds slice indexing when parsing malformed JSON, and panics when trying to read non-existent or inaccessible files via `unwrap_or_else(|e| panic!(...))` and `expect()`.
+**Learning:** Naive bounds calculation using `String::find` offset without length checks is unsafe. Similarly, hard exit via panics instead of returning `std::io::Result` exposes CLI applications to abrupt termination or resource exhaustion (DoS vectors).
+**Prevention:** Use safer abstraction methods like `.get(start..end)` to check bounds explicitly. Bubble up runtime errors using `Result` instead of using `panic!`, `unwrap()`, or `expect()` when processing external, unpredictable inputs like files or network responses.
