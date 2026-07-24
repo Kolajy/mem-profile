@@ -291,56 +291,67 @@ fn run_app<B: Backend>(
             .unwrap_or_else(|| Duration::from_secs(0));
 
         if crossterm::event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                let mut app_lock = app.lock().unwrap();
-                match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => {
-                        return Ok(());
-                    }
-                    KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                        return Ok(());
-                    }
-                    KeyCode::Char('p') | KeyCode::Char(' ') => {
-                        if !app_lock.process_exited {
-                            app_lock.is_paused = !app_lock.is_paused;
+            match event::read()? {
+                Event::Key(key) => {
+                    let mut app_lock = app.lock().unwrap();
+                    match key.code {
+                        KeyCode::Char('q') | KeyCode::Esc => {
+                            return Ok(());
                         }
-                    }
-                    KeyCode::Char('s') => {
-                        let timestamp = std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .unwrap_or_default()
-                            .as_nanos();
-                        let name = format!("tui_snapshot_{}.txt", timestamp);
-                        dump_to_file(Path::new(&name));
-                        app_lock.last_snapshot_time = Some(Instant::now());
-                        app_lock.last_snapshot_name = Some(name);
-                    }
-                    KeyCode::Char('r') => {
-                        app_lock.sort_by_size = !app_lock.sort_by_size;
-                        if !items.is_empty() {
-                            app_lock.table_state.select(Some(0));
+                        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                            return Ok(());
                         }
+                        KeyCode::Char('p') | KeyCode::Char(' ') => {
+                            if !app_lock.process_exited {
+                                app_lock.is_paused = !app_lock.is_paused;
+                            }
+                        }
+                        KeyCode::Char('s') => {
+                            let timestamp = std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .unwrap_or_default()
+                                .as_nanos();
+                            let name = format!("tui_snapshot_{}.txt", timestamp);
+                            dump_to_file(Path::new(&name));
+                            app_lock.last_snapshot_time = Some(Instant::now());
+                            app_lock.last_snapshot_name = Some(name);
+                        }
+                        KeyCode::Char('r') => {
+                            app_lock.sort_by_size = !app_lock.sort_by_size;
+                            if !items.is_empty() {
+                                app_lock.table_state.select(Some(0));
+                            }
+                        }
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            app_lock.next(items.len());
+                        }
+                        KeyCode::Up | KeyCode::Char('k') => {
+                            app_lock.previous(items.len());
+                        }
+                        KeyCode::PageUp => {
+                            app_lock.page_up(items.len());
+                        }
+                        KeyCode::PageDown => {
+                            app_lock.page_down(items.len());
+                        }
+                        KeyCode::Home => {
+                            app_lock.first(items.len());
+                        }
+                        KeyCode::End => {
+                            app_lock.last(items.len());
+                        }
+                        _ => {}
                     }
-                    KeyCode::Down | KeyCode::Char('j') => {
-                        app_lock.next(items.len());
-                    }
-                    KeyCode::Up | KeyCode::Char('k') => {
-                        app_lock.previous(items.len());
-                    }
-                    KeyCode::PageUp => {
-                        app_lock.page_up(items.len());
-                    }
-                    KeyCode::PageDown => {
-                        app_lock.page_down(items.len());
-                    }
-                    KeyCode::Home => {
-                        app_lock.first(items.len());
-                    }
-                    KeyCode::End => {
-                        app_lock.last(items.len());
-                    }
-                    _ => {}
                 }
+                Event::Mouse(mouse) => {
+                    let mut app_lock = app.lock().unwrap();
+                    match mouse.kind {
+                        event::MouseEventKind::ScrollDown => app_lock.next(items.len()),
+                        event::MouseEventKind::ScrollUp => app_lock.previous(items.len()),
+                        _ => {}
+                    }
+                }
+                _ => {}
             }
         }
 
