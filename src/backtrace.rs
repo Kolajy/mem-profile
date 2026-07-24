@@ -27,7 +27,9 @@ impl std::fmt::Display for SymbolInfo {
 /// Captures the raw instruction pointers of the current thread's backtrace.
 #[cfg(feature = "capture-backtrace")]
 pub fn capture_raw_backtrace() -> Vec<*mut std::ffi::c_void> {
-    let mut frames = Vec::new();
+    // Bolt: Pre-allocate capacity for typical backtrace depths (e.g., 32 frames) to avoid multiple
+    // reallocations while capturing stack frames during the ultra-hot GlobalAlloc interception path.
+    let mut frames = Vec::with_capacity(32);
     // We skip the first few frames to avoid including mem-profile internal functions
     // (e.g. capture_raw_backtrace, allocator hooking frames).
     backtrace::trace(|frame| {

@@ -46,3 +46,6 @@
 ## 2024-11-21 - Ordering::SeqCst overhead in Global Allocator metrics
 **Learning:** Using `Ordering::SeqCst` for statistical atomic counters (`active_bytes`, `allocation_count`, etc.) inside the `GlobalAlloc` trait implementation imposes a full memory barrier on every single heap allocation. This significantly degrades performance in multi-threaded programs by introducing unnecessary hardware-level synchronization overhead.
 **Action:** When tracking independent statistical metrics (like counters) that do not act as synchronization primitives for other memory locations, always use `Ordering::Relaxed` to avoid costly memory barriers.
+## 2024-05-25 - Avoid Reallocations in Global Allocator Hook
+**Learning:** Initializing the backtrace `Vec` with `Vec::new()` in `capture_raw_backtrace` causes multiple dynamic reallocations as frames are pushed. Because this function is called on *every single allocation* intercepted by the `GlobalAlloc` hook, these reallocations add significant overhead and recursively trigger the allocator itself.
+**Action:** When capturing data in ultra-hot paths like a global allocator hook, always pre-allocate expected space (e.g., `Vec::with_capacity(32)`) to prevent multiple reallocation cycles.
