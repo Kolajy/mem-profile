@@ -136,8 +136,10 @@ fn parse_json_array(json: &str) -> HashMap<String, AllocationStats> {
     result
 }
 
-fn validate_file_for_reading(path: &str) -> std::io::Result<()> {
-    let meta = fs::metadata(path)?;
+fn read_securely(path: &str) -> std::io::Result<String> {
+    use std::io::Read;
+    let file = fs::File::open(path)?;
+    let meta = file.metadata()?;
     if !meta.is_file() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
@@ -151,27 +153,20 @@ fn validate_file_for_reading(path: &str) -> std::io::Result<()> {
             format!("{} exceeds maximum allowed size (256 MB)", path),
         ));
     }
-    Ok(())
+    let mut content = String::new();
+    file.take(max_size).read_to_string(&mut content)?;
+    Ok(content)
 }
 
 pub fn diff_snapshots(path1: &str, path2: &str) {
-    if let Err(e) = validate_file_for_reading(path1) {
-        eprintln!("Error reading {}: {}", path1, e);
-        return;
-    }
-    if let Err(e) = validate_file_for_reading(path2) {
-        eprintln!("Error reading {}: {}", path2, e);
-        return;
-    }
-
-    let file1_content = match fs::read_to_string(path1) {
+    let file1_content = match read_securely(path1) {
         Ok(c) => c,
         Err(e) => {
             eprintln!("Error reading {}: {}", path1, e);
             return;
         }
     };
-    let file2_content = match fs::read_to_string(path2) {
+    let file2_content = match read_securely(path2) {
         Ok(c) => c,
         Err(e) => {
             eprintln!("Error reading {}: {}", path2, e);
