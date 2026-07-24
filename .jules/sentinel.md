@@ -30,3 +30,8 @@
 **Vulnerability:** DoS (Denial of Service) via threads panicking due to out-of-bounds slice indexing when parsing malformed JSON, and panics when trying to read non-existent or inaccessible files via `unwrap_or_else(|e| panic!(...))` and `expect()`.
 **Learning:** Naive bounds calculation using `String::find` offset without length checks is unsafe. Similarly, hard exit via panics instead of returning `std::io::Result` exposes CLI applications to abrupt termination or resource exhaustion (DoS vectors).
 **Prevention:** Use safer abstraction methods like `.get(start..end)` to check bounds explicitly. Bubble up runtime errors using `Result` instead of using `panic!`, `unwrap()`, or `expect()` when processing external, unpredictable inputs like files or network responses.
+
+## 2024-08-12 - [HIGH] Fix TOCTOU vulnerability in file reading
+**Vulnerability:** Checking file metadata (e.g., `is_file()` or `len()`) using `fs::metadata(path)` and then subsequently reading the file using `fs::read_to_string(path)` creates a Time-of-Check to Time-of-Use (TOCTOU) race condition. An attacker can swap the regular file for a malicious file (like a device node or named pipe) between the check and the read, leading to arbitrary data ingestion and possible memory exhaustion (DoS).
+**Learning:** File metadata validation and the subsequent read operation must be performed on the exact same file handle to prevent file swapping.
+**Prevention:** Open the file first with `File::open(path)`, read the metadata using `file.metadata()`, validate it, and then read the contents from the same `file` handle using methods like `file.take(max_size).read_to_string()`.
