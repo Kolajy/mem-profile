@@ -42,3 +42,7 @@
 ## 2024-08-03 - [TUI Primary Metric Highlighting & Peak Tracking]
 **Learning:** In terminal user interfaces where historical data rolls off-screen (e.g., rolling time windows), users easily lose track of the session's overall maximums if peak values are not explicitly tracked and displayed. Furthermore, primary metrics styled as plain text can blend into structural borders, reducing visual hierarchy.
 **Action:** Always maintain and display historical peak metrics in the UI state when utilizing rolling time windows. Use distinct visual styling (e.g., bold colors via `Line`/`Span`) to separate primary data points from surrounding structural or boilerplate text.
+
+## 2024-11-20 - [TUI Mouse Scrolling]
+**Learning:** For TUI applications, enabling `EnableMouseCapture` intercepts mouse scroll events natively. Without an explicit implementation to handle these events in the event loop, mouse scrolling fails silently, creating broken user expectations for users accustomed to mouse navigation in long lists.
+**Action:** Always handle `Event::Mouse` (specifically `ScrollUp` and `ScrollDown`) mapping to pagination bounds to ensure a smoother, native scrolling experience when `EnableMouseCapture` is used.
