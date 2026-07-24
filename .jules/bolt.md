@@ -49,3 +49,6 @@
 ## 2024-05-25 - Avoid Reallocations in Global Allocator Hook
 **Learning:** Initializing the backtrace `Vec` with `Vec::new()` in `capture_raw_backtrace` causes multiple dynamic reallocations as frames are pushed. Because this function is called on *every single allocation* intercepted by the `GlobalAlloc` hook, these reallocations add significant overhead and recursively trigger the allocator itself.
 **Action:** When capturing data in ultra-hot paths like a global allocator hook, always pre-allocate expected space (e.g., `Vec::with_capacity(32)`) to prevent multiple reallocation cycles.
+## 2024-07-28 - Zero-Allocation Iterators for Massive String Parsing
+**Learning:** Using `.collect::<Vec<&str>>()` on strings created from massive files (e.g. up to 256MB memory snapshots during diffing) allocates enormous intermediate heap vectors just to iterate through the parts once.
+**Action:** Always prefer a direct, lazy streaming iterator loop (e.g., `let iter = string.split(...); for part in iter { ... }`) when scanning over or parsing large string payloads to prevent large dynamic heap spikes and out-of-memory overheads.
