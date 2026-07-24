@@ -47,20 +47,20 @@ fn parse_json_map(json: &str) -> HashMap<String, AllocationStats> {
     // An even simpler approach: regex or string find
     // Because we just need to parse {"key": {"size": X, "count": Y}}
 
-    let parts: Vec<&str> = json.split("\":{\"size\":").collect();
-    if parts.len() <= 1 {
-        // Maybe it's formatted with spaces or different structure
-        return parse_json_array(json);
-    }
+    let mut parts_iter = json.split("\":{\"size\":");
+    let mut prev = match parts_iter.next() {
+        Some(first) => first,
+        None => return result,
+    };
 
-    for i in 1..parts.len() {
-        // parts[i-1] ends with the key string
-        let prev = parts[i - 1];
+    let mut parsed_any = false;
+
+    for current in parts_iter {
+        parsed_any = true;
         let key_start = prev.rfind('"').unwrap_or(0);
         let key = prev.get(key_start + 1..).unwrap_or("").to_string();
 
-        // parts[i] starts with the size, followed by ,"count":
-        let current = parts[i];
+        // current starts with the size, followed by ,"count":
         let size_end_idx = current.find(',').unwrap_or(current.len());
         let size_str = current.get(..size_end_idx).unwrap_or("").trim();
         let size = size_str.parse::<usize>().unwrap_or(0);
@@ -75,6 +75,12 @@ fn parse_json_map(json: &str) -> HashMap<String, AllocationStats> {
                 result.insert(key, AllocationStats { size, count });
             }
         }
+        prev = current;
+    }
+
+    if !parsed_any {
+        // Maybe it's formatted with spaces or different structure
+        return parse_json_array(json);
     }
 
     result
@@ -84,10 +90,10 @@ fn parse_json_map(json: &str) -> HashMap<String, AllocationStats> {
 fn parse_json_array(json: &str) -> HashMap<String, AllocationStats> {
     let mut result = HashMap::new();
 
-    let parts: Vec<&str> = json.split("\"stack\":").collect();
-    for i in 1..parts.len() {
-        let current = parts[i];
+    let mut parts_iter = json.split("\"stack\":");
+    parts_iter.next(); // Skip the first part
 
+    for current in parts_iter {
         let stack_start = current.find('"').unwrap_or(0) + 1;
         let stack = if let Some(sub) = current.get(stack_start..) {
             let end_offset = sub.find('"').unwrap_or(0);
