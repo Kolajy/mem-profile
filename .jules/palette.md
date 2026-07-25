@@ -49,3 +49,7 @@
 ## 2024-11-20 - [TUI Mouse Scrolling Page Jump Fix]
 **Learning:** Using wrap-around selection logic (`next`/`previous` that jumps from end to start) with mouse scroll wheels causes rapid disorientation because scroll wheels fire many events quickly. Wrapping should be disabled for mouse scroll.
 **Action:** When handling mouse scroll events in TUI applications, map them to bounded step functions (e.g., clamping at list boundaries) rather than wrapping logic or large page jumps to provide a stable scrolling experience.
+
+## 2024-11-20 - [TUI Cursor Hiding]
+**Learning:** Terminal cursors left visible in standard TUI applications (like those rendering dashboards) blink continuously and float above UI elements, creating significant visual noise and distraction.
+**Action:** Always call `terminal.hide_cursor()` during application setup to ensure a clean, distraction-free visual experience. (Remember to restore it with `terminal.show_cursor()` on exit).

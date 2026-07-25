@@ -37,6 +37,7 @@ pub fn run() {
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture).unwrap();
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend).unwrap();
+    terminal.hide_cursor().unwrap();
 
     // Create app state
     let app = Arc::new(Mutex::new(App::new(pid)));
