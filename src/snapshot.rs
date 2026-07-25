@@ -1,7 +1,7 @@
 use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
 use std::fs::OpenOptions;
-use std::io::Write;
+use std::io::{BufWriter, Write};
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::Path;
@@ -79,35 +79,36 @@ pub fn dump_to_file(path: &Path) {
     #[cfg(unix)]
     options.mode(0o600).custom_flags(libc::O_NOFOLLOW); // 🛡️ Sentinel: Secure file permissions to prevent info disclosure and symlink attacks
 
-    let mut file = match options.open(&tmp_path) {
+    let file = match options.open(&tmp_path) {
         Ok(f) => f,
         Err(e) => {
             eprintln!("Failed to create temporary snapshot file: {}", e);
             return;
         }
     };
+    let mut buf_writer = BufWriter::new(file);
 
-    let _ = writeln!(file, "Memory Snapshot");
-    let _ = writeln!(file, "Total Allocations: {}", allocations.len());
-    let _ = writeln!(file, "Total Bytes: {}", total_bytes);
+    let _ = writeln!(buf_writer, "Memory Snapshot");
+    let _ = writeln!(buf_writer, "Total Allocations: {}", allocations.len());
+    let _ = writeln!(buf_writer, "Total Bytes: {}", total_bytes);
 
     for (i, (_ptr, size, frames)) in allocations.iter().enumerate() {
-        let _ = writeln!(file, "\nAllocation {}: {} bytes", i + 1, size);
+        let _ = writeln!(buf_writer, "\nAllocation {}: {} bytes", i + 1, size);
         let symbols = symbolicate_frames(frames);
         if symbols.is_empty() {
-            let _ = writeln!(file, "  <no backtrace captured>");
+            let _ = writeln!(buf_writer, "  <no backtrace captured>");
         } else {
             for (idx, sym) in symbols.iter().enumerate() {
                 let name = sym.name.as_deref().unwrap_or("<unknown>");
                 if name.contains("mem_profile::") || name.contains("backtrace::") {
                     continue;
                 }
-                let _ = writeln!(file, "    #{}: {}", idx, sym);
+                let _ = writeln!(buf_writer, "    #{}: {}", idx, sym);
             }
         }
     }
 
-    drop(file);
+    drop(buf_writer);
 
     if let Err(e) = std::fs::rename(&tmp_path, path) {
         let _ = std::fs::remove_file(&tmp_path);
