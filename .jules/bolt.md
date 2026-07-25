@@ -52,3 +52,6 @@
 ## 2024-07-28 - Zero-Allocation Iterators for Massive String Parsing
 **Learning:** Using `.collect::<Vec<&str>>()` on strings created from massive files (e.g. up to 256MB memory snapshots during diffing) allocates enormous intermediate heap vectors just to iterate through the parts once.
 **Action:** Always prefer a direct, lazy streaming iterator loop (e.g., `let iter = string.split(...); for part in iter { ... }`) when scanning over or parsing large string payloads to prevent large dynamic heap spikes and out-of-memory overheads.
+## 2024-11-21 - Avoid String Allocations in Custom JSON Parsers
+**Learning:** During snapshot diffing in `src/diff.rs`, the simplistic custom JSON parser was eagerly allocating new `String` instances on the heap for every single "stack" key using `.to_string()`. This resulted in significant memory bloat, especially for large snapshot files with millions of elements. Since the keys are substrings of the input string `json`, they can be borrowed directly as string slices (`&str`).
+**Action:** Always favor returning borrowed slices `&str` mapped to the lifetime of the input string instead of calling `.to_string()` or `.clone()` inside parsing loops. Change container keys to hold references (e.g., `HashMap<&'a str, AllocationStats>`) wherever feasible to achieve zero-allocation parsing.

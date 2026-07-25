@@ -13,7 +13,7 @@ pub struct AllocationStats {
 // Let's assume the snapshot output is standard JSON map of stack to size and count
 // We will write a tiny bespoke JSON parser to avoid adding serde dependencies
 
-fn parse_json_map(json: &str) -> HashMap<String, AllocationStats> {
+fn parse_json_map<'a>(json: &'a str) -> HashMap<&'a str, AllocationStats> {
     let mut result = HashMap::new();
 
     // Simplistic parser: look for "stack", "size", "count" if array
@@ -58,7 +58,7 @@ fn parse_json_map(json: &str) -> HashMap<String, AllocationStats> {
     for current in parts_iter {
         parsed_any = true;
         let key_start = prev.rfind('"').unwrap_or(0);
-        let key = prev.get(key_start + 1..).unwrap_or("").to_string();
+        let key = prev.get(key_start + 1..).unwrap_or("");
 
         // current starts with the size, followed by ,"count":
         let size_end_idx = current.find(',').unwrap_or(current.len());
@@ -87,7 +87,7 @@ fn parse_json_map(json: &str) -> HashMap<String, AllocationStats> {
 }
 
 // Format: [ {"stack": "...", "size": 123, "count": 1}, ... ]
-fn parse_json_array(json: &str) -> HashMap<String, AllocationStats> {
+fn parse_json_array<'a>(json: &'a str) -> HashMap<&'a str, AllocationStats> {
     let mut result = HashMap::new();
 
     let mut parts_iter = json.split("\"stack\":");
@@ -97,9 +97,9 @@ fn parse_json_array(json: &str) -> HashMap<String, AllocationStats> {
         let stack_start = current.find('"').unwrap_or(0) + 1;
         let stack = if let Some(sub) = current.get(stack_start..) {
             let end_offset = sub.find('"').unwrap_or(0);
-            sub.get(..end_offset).unwrap_or("").to_string()
+            sub.get(..end_offset).unwrap_or("")
         } else {
-            "".to_string()
+            ""
         };
 
         let size_idx = current.find("\"size\":").unwrap_or(current.len());
@@ -196,20 +196,20 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     let mut freed_paths = Vec::new();
 
     for (stack, stats1) in &snap1 {
-        if let Some(stats2) = snap2.get(stack) {
+        if let Some(stats2) = snap2.get(*stack) {
             let size_diff = stats2.size as isize - stats1.size as isize;
             let count_diff = stats2.count as isize - stats1.count as isize;
             if size_diff != 0 || count_diff != 0 {
-                net_differences.push((stack.clone(), size_diff, count_diff));
+                net_differences.push((*stack, size_diff, count_diff));
             }
         } else {
-            freed_paths.push((stack.clone(), stats1.size, stats1.count));
+            freed_paths.push((*stack, stats1.size, stats1.count));
         }
     }
 
     for (stack, stats2) in &snap2 {
-        if !snap1.contains_key(stack) {
-            new_paths.push((stack.clone(), stats2.size, stats2.count));
+        if !snap1.contains_key(*stack) {
+            new_paths.push((*stack, stats2.size, stats2.count));
         }
     }
 
