@@ -46,3 +46,6 @@
 ## 2024-11-20 - [TUI Mouse Scrolling]
 **Learning:** For TUI applications, enabling `EnableMouseCapture` intercepts mouse scroll events natively. Without an explicit implementation to handle these events in the event loop, mouse scrolling fails silently, creating broken user expectations for users accustomed to mouse navigation in long lists.
 **Action:** Always handle `Event::Mouse` (specifically `ScrollUp` and `ScrollDown`) mapping to pagination bounds to ensure a smoother, native scrolling experience when `EnableMouseCapture` is used.
+## 2024-11-20 - [TUI Mouse Scrolling Page Jump Fix]
+**Learning:** Using wrap-around selection logic (`next`/`previous` that jumps from end to start) with mouse scroll wheels causes rapid disorientation because scroll wheels fire many events quickly. Wrapping should be disabled for mouse scroll.
+**Action:** When handling mouse scroll events in TUI applications, map them to bounded step functions (e.g., clamping at list boundaries) rather than wrapping logic or large page jumps to provide a stable scrolling experience.

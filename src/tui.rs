@@ -204,6 +204,42 @@ impl App {
         self.table_state.select(Some(i));
     }
 
+    fn scroll_down(&mut self, items_len: usize) {
+        if items_len == 0 {
+            self.table_state.select(None);
+            return;
+        }
+        let i = match self.table_state.selected() {
+            Some(i) => {
+                if i >= items_len.saturating_sub(1) {
+                    items_len.saturating_sub(1)
+                } else {
+                    i + 1
+                }
+            }
+            None => 0,
+        };
+        self.table_state.select(Some(i));
+    }
+
+    fn scroll_up(&mut self, items_len: usize) {
+        if items_len == 0 {
+            self.table_state.select(None);
+            return;
+        }
+        let i = match self.table_state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    0
+                } else {
+                    i - 1
+                }
+            }
+            None => 0,
+        };
+        self.table_state.select(Some(i));
+    }
+
     fn previous(&mut self, items_len: usize) {
         if items_len == 0 {
             self.table_state.select(None);
@@ -346,8 +382,8 @@ fn run_app<B: Backend>(
                 Event::Mouse(mouse) => {
                     let mut app_lock = app.lock().unwrap();
                     match mouse.kind {
-                        event::MouseEventKind::ScrollDown => app_lock.next(items.len()),
-                        event::MouseEventKind::ScrollUp => app_lock.previous(items.len()),
+                        event::MouseEventKind::ScrollDown => app_lock.scroll_down(items.len()),
+                        event::MouseEventKind::ScrollUp => app_lock.scroll_up(items.len()),
                         _ => {}
                     }
                 }
