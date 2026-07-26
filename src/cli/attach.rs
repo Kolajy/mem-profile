@@ -7,6 +7,12 @@ use std::thread;
 use std::time::Duration;
 
 pub fn execute(pid: u32) {
+    // 🛡️ Sentinel: Validate PID to prevent negative i32 wrapping which targets process groups or all processes
+    if pid == 0 || pid > i32::MAX as u32 {
+        eprintln!("Error: Invalid PID {}. Must be a valid positive process ID.", pid);
+        exit(1);
+    }
+
     // Check if process exists and we have permission to signal it
     let alive = unsafe { libc::kill(pid as i32, 0) };
     if alive != 0 {
