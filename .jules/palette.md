@@ -53,3 +53,7 @@
 ## 2024-11-20 - [TUI Cursor Hiding]
 **Learning:** Terminal cursors left visible in standard TUI applications (like those rendering dashboards) blink continuously and float above UI elements, creating significant visual noise and distraction.
 **Action:** Always call `terminal.hide_cursor()` during application setup to ensure a clean, distraction-free visual experience. (Remember to restore it with `terminal.show_cursor()` on exit).
+
+## 2024-11-20 - [TUI Table Jitter on Selection]
+**Learning:** In TUI tables, dynamically appearing highlight symbols (like `>> `) when a selection transitions from `None` to `Some(index)` cause the entire table content to shift horizontally, resulting in a jarring visual jitter.
+**Action:** Always configure TUI lists and tables (like `ratatui::widgets::Table`) with `HighlightSpacing::Always` (or equivalent spacing rules) to permanently reserve column width for the highlight symbol, ensuring consistent layout regardless of selection state.
