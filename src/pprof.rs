@@ -1,6 +1,7 @@
 use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
 use std::collections::HashMap;
+use std::fmt::Write as _;
 
 /// Exports active memory allocations to a "folded stack" format.
 /// This format represents call stacks as semicolon-separated function names
@@ -72,7 +73,7 @@ pub fn export_folded_stacks() -> String {
 
     for key in sorted_keys {
         if let Some(size) = stacks.get(key) {
-            output.push_str(&format!("{} {}\n", key, size));
+            let _ = writeln!(output, "{} {}", key, size);
         }
     }
 

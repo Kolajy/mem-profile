@@ -58,3 +58,6 @@
 ## 2025-01-22 - BufWriter optimization for snapshot dumps
 **Learning:** Writing massive amounts of data directly to a `File` handler via `writeln!` in a tight loop causes a severe system bottleneck because it executes an unbuffered `write()` syscall for every single line. For operations like serializing memory snapshots containing thousands of allocations, this blocked the process significantly.
 **Action:** Always wrap underlying `File` handles in `std::io::BufWriter` when performing multiple sequential writes (like in loops). Ensure `drop(buf_writer)` or `.flush()` is explicitly called to finalize writes before renaming or modifying the file on disk.
+## 2025-01-22 - Avoid format! with push_str in Loops
+**Learning:** Using `String::push_str` coupled with `format!` in a loop generating large text outputs (like flamegraph folded stacks) causes intermediate `String` allocations for every formatted line.
+**Action:** Use `writeln!` with `std::fmt::Write` to directly format text into the target `String` buffer, which prevents intermediate string allocations and significantly improves execution speed.
