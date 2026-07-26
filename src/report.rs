@@ -2,6 +2,7 @@ use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
 use inferno::flamegraph::{from_reader, Options};
 use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::fs::OpenOptions;
 use std::io::Cursor;
 #[cfg(unix)]
@@ -133,7 +134,7 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
 
         let mut folded_data = String::new();
         for (stack, size) in folded_stacks {
-            folded_data.push_str(&format!("{} {}\n", stack, size));
+            let _ = writeln!(folded_data, "{} {}", stack, size);
         }
 
         let mut opts = Options::default();
