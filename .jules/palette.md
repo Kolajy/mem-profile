@@ -57,3 +57,7 @@
 ## 2024-11-20 - [TUI Table Jitter on Selection]
 **Learning:** In TUI tables, dynamically appearing highlight symbols (like `>> `) when a selection transitions from `None` to `Some(index)` cause the entire table content to shift horizontally, resulting in a jarring visual jitter.
 **Action:** Always configure TUI lists and tables (like `ratatui::widgets::Table`) with `HighlightSpacing::Always` (or equivalent spacing rules) to permanently reserve column width for the highlight symbol, ensuring consistent layout regardless of selection state.
+
+## 2024-11-20 - [TUI Right-Aligned Header Jitter]
+**Learning:** In TUI tables, dynamically appending sort indicators (like `" ▼"`) to right-aligned column headers causes the primary header text to shift horizontally when the sort state changes, resulting in a jarring layout jitter.
+**Action:** Always pad inactive header states with equivalent spaces (e.g., `"Size  "`) to match the width of the active state with the sort indicator. This ensures the text remains firmly anchored in place regardless of the sort state.
