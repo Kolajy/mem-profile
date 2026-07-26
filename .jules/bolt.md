@@ -61,3 +61,7 @@
 ## 2025-01-22 - Avoid format! with push_str in Loops
 **Learning:** Using `String::push_str` coupled with `format!` in a loop generating large text outputs (like flamegraph folded stacks) causes intermediate `String` allocations for every formatted line.
 **Action:** Use `writeln!` with `std::fmt::Write` to directly format text into the target `String` buffer, which prevents intermediate string allocations and significantly improves execution speed.
+
+## 2026-07-20 - Cache backtrace symbolication in snapshot dump
+**Learning:** Calling `symbolicate_frames` for every allocation in a tight loop when dumping a snapshot causes major performance degradation and freezes since symbolication is extremely expensive. It was unconditionally called for every allocation rather than being grouped or cached by the raw stack frame pointers.
+**Action:** Use a `HashMap` to cache the expensive formatting of `symbolicate_frames`, keyed by the raw backtrace pointers (`&Vec<*mut std::ffi::c_void>`), ensuring that identical backtraces are only symbolicated and formatted once during a snapshot dump.

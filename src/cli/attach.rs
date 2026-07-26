@@ -9,7 +9,10 @@ use std::time::Duration;
 pub fn execute(pid: u32) {
     // 🛡️ Sentinel: Validate PID to prevent negative i32 wrapping which targets process groups or all processes
     if pid == 0 || pid > i32::MAX as u32 {
-        eprintln!("Error: Invalid PID {}. Must be a valid positive process ID.", pid);
+        eprintln!(
+            "Error: Invalid PID {}. Must be a valid positive process ID.",
+            pid
+        );
         exit(1);
     }
 

@@ -1,7 +1,8 @@
 use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
+use std::fmt::Write as FmtWrite;
 use std::fs::OpenOptions;
-use std::io::{BufWriter, Write};
+use std::io::{BufWriter, Write as _};
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::Path;
@@ -92,20 +93,32 @@ pub fn dump_to_file(path: &Path) {
     let _ = writeln!(buf_writer, "Total Allocations: {}", allocations.len());
     let _ = writeln!(buf_writer, "Total Bytes: {}", total_bytes);
 
+    // Bolt: Cache formatted stack traces to avoid extremely expensive repeated symbolication
+    let mut symbol_cache: std::collections::HashMap<&Vec<*mut std::ffi::c_void>, String> =
+        std::collections::HashMap::new();
+
     for (i, (_ptr, size, frames)) in allocations.iter().enumerate() {
         let _ = writeln!(buf_writer, "\nAllocation {}: {} bytes", i + 1, size);
-        let symbols = symbolicate_frames(frames);
-        if symbols.is_empty() {
-            let _ = writeln!(buf_writer, "  <no backtrace captured>");
-        } else {
-            for (idx, sym) in symbols.iter().enumerate() {
-                let name = sym.name.as_deref().unwrap_or("<unknown>");
-                if name.contains("mem_profile::") || name.contains("backtrace::") {
-                    continue;
+
+        let trace_str = symbol_cache.entry(frames).or_insert_with(|| {
+            let symbols = symbolicate_frames(frames);
+            if symbols.is_empty() {
+                "  <no backtrace captured>\n".to_string()
+            } else {
+                let mut buf = String::new();
+                for (idx, sym) in symbols.iter().enumerate() {
+                    let name = sym.name.as_deref().unwrap_or("<unknown>");
+                    if name.contains("mem_profile::") || name.contains("backtrace::") {
+                        continue;
+                    }
+                    let _ = writeln!(&mut buf, "    #{}: {}", idx, sym);
                 }
-                let _ = writeln!(buf_writer, "    #{}: {}", idx, sym);
+                buf
             }
-        }
+        });
+
+        // Write the cached formatted string directly
+        let _ = write!(buf_writer, "{}", trace_str);
     }
 
     drop(buf_writer);
