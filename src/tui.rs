@@ -785,7 +785,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     .header(header)
     .block(Block::default().borders(Borders::ALL).title(title_text))
     .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-    .highlight_symbol(">> ");
+    .highlight_symbol(">> ")
+    .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
 
     f.render_stateful_widget(table, chunks[2], &mut app.table_state);
 }
