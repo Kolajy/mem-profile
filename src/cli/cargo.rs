@@ -2,7 +2,13 @@ use std::env;
 use std::process::{exit, Command};
 
 pub fn execute(args: Vec<String>) {
-    let current_exe = env::current_exe().expect("Failed to get current executable path");
+    let current_exe = match env::current_exe() {
+        Ok(exe) => exe,
+        Err(err) => {
+            eprintln!("Error: Failed to get current executable path: {}", err);
+            exit(1);
+        }
+    };
     let exe_path = current_exe
         .display()
         .to_string()
