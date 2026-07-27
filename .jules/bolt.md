@@ -68,3 +68,6 @@
 ## 2024-11-20 - Prevent intermediate allocations when joining strings
 **Learning:** Collecting elements into an intermediate `Vec<String>` just to `.join()` them causes severe heap churn in hot paths like `ratatui` render loops when formatting call stacks.
 **Action:** Use a pre-allocated `String::with_capacity` buffer and `push_str` or `std::fmt::Write` directly in a loop to build the string in place without intermediate collections.
+## 2026-07-27 - Avoid Vec<String> and .join() for string building
+**Learning:** Using an intermediate `Vec<String>` and calling `.join(";")` to build strings like folded stacks causes unnecessary dynamic memory allocations and heap churn.
+**Action:** Use a pre-allocated `String::with_capacity` buffer and directly push characters or mapped characters (using `.chars()`) in-place inside loops instead of collecting into a `Vec`.

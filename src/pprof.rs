@@ -31,15 +31,16 @@ pub fn export_folded_stacks() -> String {
 
         for (backtrace, total_size) in raw_stacks {
             let symbols = symbolicate_frames(&backtrace);
-            let mut stack_frames = Vec::new();
+            let mut stack_str = String::with_capacity(128);
 
             // If we have no symbols (e.g. backtrace feature disabled),
             // we'll just group everything under an unknown root.
             if symbols.is_empty() {
-                stack_frames.push("<unknown>".to_string());
+                stack_str.push_str("<unknown>");
             } else {
                 // Reverse the frames to put the root (e.g. main) first,
                 // and leaf (e.g. alloc) last.
+                let mut first = true;
                 for sym in symbols.iter().rev() {
                     let name = sym.name.as_deref().unwrap_or("<unknown>");
 
@@ -48,18 +49,27 @@ pub fn export_folded_stacks() -> String {
                         continue;
                     }
 
+                    if !first {
+                        stack_str.push(';');
+                    }
+                    first = false;
+
                     // Folded stacks use semicolons as frame separators.
                     // Ensure we don't have stray semicolons in function names.
-                    let clean_name = name.replace(";", ",");
-                    stack_frames.push(clean_name);
+                    for c in name.chars() {
+                        if c == ';' {
+                            stack_str.push(',');
+                        } else {
+                            stack_str.push(c);
+                        }
+                    }
                 }
             }
 
-            if stack_frames.is_empty() {
-                stack_frames.push("<unknown>".to_string());
+            if stack_str.is_empty() {
+                stack_str.push_str("<unknown>");
             }
 
-            let stack_str = stack_frames.join(";");
             *stacks.entry(stack_str).or_insert(0) += total_size;
         }
 
