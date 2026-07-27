@@ -503,24 +503,33 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         .split(f.size());
 
     // Title / Status
-    let status_span = if app.process_exited {
-        Span::styled(
-            " [PROCESS EXITED] ",
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+    let (status_span, border_style) = if app.process_exited {
+        (
+            Span::styled(
+                " [PROCESS EXITED] ",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
+            Style::default().fg(Color::Red),
         )
     } else if app.is_paused {
-        Span::styled(
-            " [PAUSED] ",
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
+        (
+            Span::styled(
+                " [PAUSED] ",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Style::default().fg(Color::Yellow),
         )
     } else {
-        Span::styled(
-            " [RUNNING] ",
-            Style::default()
-                .fg(Color::Green)
-                .add_modifier(Modifier::BOLD),
+        (
+            Span::styled(
+                " [RUNNING] ",
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Style::default().fg(Color::DarkGray),
         )
     };
 
@@ -571,7 +580,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
 
     let title_block = Block::default()
         .borders(Borders::ALL)
-        .style(Style::default().fg(Color::White))
+        .border_style(border_style)
         .title(title);
 
     let current_rss = if let Some(last) = app.rss_history.back() {
@@ -613,7 +622,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     if app.rss_history.is_empty() {
         let block = Block::default()
             .title("RSS Timeline (Last 60s)")
-            .borders(Borders::ALL);
+            .borders(Borders::ALL)
+            .border_style(border_style);
         let msg = if app.process_exited {
             "No memory data collected."
         } else {
@@ -658,7 +668,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
             .block(
                 Block::default()
                     .title("RSS Timeline (Last 60s)")
-                    .borders(Borders::ALL),
+                    .borders(Borders::ALL)
+                    .border_style(border_style),
             )
             .x_axis(
                 Axis::default()
@@ -783,7 +794,12 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         ],
     )
     .header(header)
-    .block(Block::default().borders(Borders::ALL).title(title_text))
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(border_style)
+            .title(title_text),
+    )
     .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
     .highlight_symbol(">> ")
     .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);

@@ -61,3 +61,7 @@
 ## 2024-11-20 - [TUI Right-Aligned Header Jitter]
 **Learning:** In TUI tables, dynamically appending sort indicators (like `" ▼"`) to right-aligned column headers causes the primary header text to shift horizontally when the sort state changes, resulting in a jarring layout jitter.
 **Action:** Always pad inactive header states with equivalent spaces (e.g., `"Size  "`) to match the width of the active state with the sort indicator. This ensures the text remains firmly anchored in place regardless of the sort state.
+
+## 2024-11-20 - [TUI Visual Hierarchy & Lifecycle Borders]
+**Learning:** Bright, stark white default structural borders in terminal user interfaces command too much visual attention, reducing the scannability of the primary data within. Furthermore, relying solely on text indicators for global application states (like "paused" or "exited") is easily missed.
+**Action:** Always dim structural boilerplate (e.g., using `Color::DarkGray` for borders) to elevate the primary content. Additionally, dynamically color these structural borders based on the application lifecycle state (e.g., Red when exited, Yellow when paused) to provide an unmissable, ambient visual cue of the application's status.
