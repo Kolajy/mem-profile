@@ -113,7 +113,8 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
                 continue;
             }
 
-            let mut stack = Vec::new();
+            let mut stack_str = String::with_capacity(128);
+            let mut first = true;
             // We want entry points at the root, so reverse the stack
             for sym in symbols.iter().rev() {
                 let name = sym.name.as_deref().unwrap_or("<unknown>");
@@ -121,13 +122,23 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
                 if name.contains("mem_profile::") || name.contains("backtrace::") {
                     continue;
                 }
+
+                if !first {
+                    stack_str.push(';');
+                }
+                first = false;
+
                 // Replace semicolons with colons to avoid inferno format conflicts
-                let clean_name = name.replace(";", ":").replace(" ", "_");
-                stack.push(clean_name);
+                for c in name.chars() {
+                    match c {
+                        ';' => stack_str.push(':'),
+                        ' ' => stack_str.push('_'),
+                        _ => stack_str.push(c),
+                    }
+                }
             }
 
-            if !stack.is_empty() {
-                let stack_str = stack.join(";");
+            if !stack_str.is_empty() {
                 *folded_stacks.entry(stack_str).or_insert(0) += size;
             }
         }
