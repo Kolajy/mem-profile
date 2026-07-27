@@ -65,3 +65,7 @@
 ## 2024-11-20 - [TUI Visual Hierarchy & Lifecycle Borders]
 **Learning:** Bright, stark white default structural borders in terminal user interfaces command too much visual attention, reducing the scannability of the primary data within. Furthermore, relying solely on text indicators for global application states (like "paused" or "exited") is easily missed.
 **Action:** Always dim structural boilerplate (e.g., using `Color::DarkGray` for borders) to elevate the primary content. Additionally, dynamically color these structural borders based on the application lifecycle state (e.g., Red when exited, Yellow when paused) to provide an unmissable, ambient visual cue of the application's status.
+
+## 2024-11-20 - [TUI Backtrace Truncation]
+**Learning:** In terminal tables with limited column widths, long string data (like hierarchical call stacks formatted root-to-leaf) gets truncated on the right side. This often hides the most crucial piece of information (the leaf function or actual allocator) from the user.
+**Action:** Format hierarchical or path-like string data leaf-first (e.g., `leaf <- node <- root`) in TUI columns, ensuring the most specific and important identifying information survives right-side truncation.
