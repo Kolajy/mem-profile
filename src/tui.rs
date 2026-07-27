@@ -32,12 +32,30 @@ use std::{
 pub fn run() {
     let pid = std::process::id();
     // Setup terminal
-    enable_raw_mode().unwrap();
+    if let Err(e) = enable_raw_mode() {
+        eprintln!("Error: Failed to enable raw mode: {}", e);
+        return;
+    }
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture).unwrap();
+    if let Err(e) = execute!(stdout, EnterAlternateScreen, EnableMouseCapture) {
+        eprintln!("Error: Failed to execute terminal commands: {}", e);
+        let _ = disable_raw_mode();
+        return;
+    }
     let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend).unwrap();
-    terminal.hide_cursor().unwrap();
+    let mut terminal = match Terminal::new(backend) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("Error: Failed to create terminal: {}", e);
+            let _ = disable_raw_mode();
+            return;
+        }
+    };
+    if let Err(e) = terminal.hide_cursor() {
+        eprintln!("Error: Failed to hide cursor: {}", e);
+        let _ = disable_raw_mode();
+        return;
+    }
 
     // Create app state
     let app = Arc::new(Mutex::new(App::new(pid)));
