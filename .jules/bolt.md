@@ -65,3 +65,6 @@
 ## 2026-07-20 - Cache backtrace symbolication in snapshot dump
 **Learning:** Calling `symbolicate_frames` for every allocation in a tight loop when dumping a snapshot causes major performance degradation and freezes since symbolication is extremely expensive. It was unconditionally called for every allocation rather than being grouped or cached by the raw stack frame pointers.
 **Action:** Use a `HashMap` to cache the expensive formatting of `symbolicate_frames`, keyed by the raw backtrace pointers (`&Vec<*mut std::ffi::c_void>`), ensuring that identical backtraces are only symbolicated and formatted once during a snapshot dump.
+## 2024-11-20 - Prevent intermediate allocations when joining strings
+**Learning:** Collecting elements into an intermediate `Vec<String>` just to `.join()` them causes severe heap churn in hot paths like `ratatui` render loops when formatting call stacks.
+**Action:** Use a pre-allocated `String::with_capacity` buffer and `push_str` or `std::fmt::Write` directly in a loop to build the string in place without intermediate collections.
