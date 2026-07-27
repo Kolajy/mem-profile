@@ -446,19 +446,24 @@ fn get_active_allocations(
                 }
             } else {
                 let symbols = symbolicate_frames(&frame_ptrs.0);
-                let mut stack = Vec::new();
+                let mut s_buf = String::with_capacity(128);
+                let mut first = true;
                 for sym in symbols.iter().rev() {
                     let name = sym.name.as_deref().unwrap_or("<unknown>");
                     if name.contains("mem_profile::") || name.contains("backtrace::") {
                         continue;
                     }
-                    stack.push(name.to_string());
+                    if !first {
+                        s_buf.push_str(" -> ");
+                    }
+                    s_buf.push_str(name);
+                    first = false;
                 }
-                if stack.is_empty() {
-                    stack.push("<unknown>".to_string());
+                if s_buf.is_empty() {
+                    s_buf.push_str("<unknown>");
                 }
 
-                let s = Arc::new(stack.join(" -> "));
+                let s = Arc::new(s_buf);
 
                 if let Some(entry) = folded.get_mut(&s) {
                     entry.0 += total_size;
