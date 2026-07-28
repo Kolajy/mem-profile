@@ -177,18 +177,21 @@ fn main() {
     let is_interrupted = Arc::new(AtomicBool::new(false));
     let is_interrupted_clone = is_interrupted.clone();
 
-    ctrlc::set_handler(move || {
+    if let Err(e) = ctrlc::set_handler(move || {
         is_interrupted_clone.store(true, Ordering::SeqCst);
-    })
-    .expect("Error setting Ctrl-C handler");
+    }) {
+        eprintln!("Error setting Ctrl-C handler: {}", e);
+        std::process::exit(1);
+    }
 
     let exit_routine = |child: &mut std::process::Child, exit_code: i32| -> ! {
         let _ = child.kill();
         is_running.store(false, Ordering::Relaxed);
-        monitor_thread.join().unwrap();
+        let _ = monitor_thread.join();
         let total_duration = start_time.elapsed().as_secs_f64();
-        let data = rss_data.lock().unwrap();
-        draw_graph(&data, total_duration);
+        if let Ok(data) = rss_data.lock() {
+            draw_graph(&data, total_duration);
+        }
         std::process::exit(exit_code);
     };
 

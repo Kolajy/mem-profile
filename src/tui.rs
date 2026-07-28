@@ -104,14 +104,13 @@ pub fn run() {
     let res = run_app(&mut terminal, app, is_running.clone());
 
     // Restore terminal
-    disable_raw_mode().unwrap();
-    execute!(
+    let _ = disable_raw_mode();
+    let _ = execute!(
         terminal.backend_mut(),
         LeaveAlternateScreen,
         DisableMouseCapture
-    )
-    .unwrap();
-    terminal.show_cursor().unwrap();
+    );
+    let _ = terminal.show_cursor();
 
     is_running.store(false, Ordering::Relaxed);
     let _ = monitor_thread.join();
