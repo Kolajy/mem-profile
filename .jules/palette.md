@@ -69,3 +69,7 @@
 ## 2024-11-20 - [TUI Backtrace Truncation]
 **Learning:** In terminal tables with limited column widths, long string data (like hierarchical call stacks formatted root-to-leaf) gets truncated on the right side. This often hides the most crucial piece of information (the leaf function or actual allocator) from the user.
 **Action:** Format hierarchical or path-like string data leaf-first (e.g., `leaf <- node <- root`) in TUI columns, ensuring the most specific and important identifying information survives right-side truncation.
+
+## 2024-11-20 - [TUI Thousands Separators for List Totals]
+**Learning:** Applying thousands separators (e.g. `num-format`) only to data columns but missing list totals or positional indicators in titles creates an inconsistent experience and leaves large numbers difficult to read.
+**Action:** Always format standard numerical data, including positional indicators and list totals (like "X of Y items"), with thousands separators to ensure consistency and improve scannability across the entire UI.

@@ -796,14 +796,14 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     let title_text = if let Some(selected) = app.table_state.selected() {
         format!(
             "Active Allocations ({} of {} items - Sorted by {})",
-            selected + 1,
-            items.len(),
+            (selected + 1).to_formatted_string(&Locale::en),
+            items.len().to_formatted_string(&Locale::en),
             sort_label
         )
     } else {
         format!(
             "Active Allocations ({} items - Sorted by {})",
-            items.len(),
+            items.len().to_formatted_string(&Locale::en),
             sort_label
         )
     };
