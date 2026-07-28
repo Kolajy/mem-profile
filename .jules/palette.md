@@ -73,3 +73,6 @@
 ## 2024-11-20 - [TUI Thousands Separators for List Totals]
 **Learning:** Applying thousands separators (e.g. `num-format`) only to data columns but missing list totals or positional indicators in titles creates an inconsistent experience and leaves large numbers difficult to read.
 **Action:** Always format standard numerical data, including positional indicators and list totals (like "X of Y items"), with thousands separators to ensure consistency and improve scannability across the entire UI.
+## 2026-07-28 - [TUI Success Empty States]
+**Learning:** When an empty state represents a successful outcome (like zero memory leaks at the end of a profiling session), generic messaging like 'No data collected' creates ambiguity and doubt.
+**Action:** Use explicit success messaging (e.g., 'Zero leaks detected') and positive styling (e.g., green text) to reassure the user of the successful outcome.
