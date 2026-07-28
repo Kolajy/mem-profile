@@ -31,10 +31,12 @@ pub fn execute(pid: u32) {
     let is_interrupted = Arc::new(AtomicBool::new(false));
     let is_interrupted_clone = is_interrupted.clone();
 
-    ctrlc::set_handler(move || {
+    if let Err(e) = ctrlc::set_handler(move || {
         is_interrupted_clone.store(true, Ordering::SeqCst);
-    })
-    .expect("Error setting Ctrl-C handler");
+    }) {
+        eprintln!("Error setting Ctrl-C handler: {}", e);
+        exit(1);
+    }
 
     let statm_path = format!("/proc/{}/statm", pid);
     let mut peak_rss_pages = 0u64;
