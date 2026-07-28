@@ -774,14 +774,18 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         .bottom_margin(1);
 
     let rows: Vec<Row> = if items.is_empty() {
-        let msg = if app.process_exited {
-            "No memory data collected."
+        let (msg, style) = if app.process_exited {
+            (
+                "✓ No active allocations remaining (Zero leaks detected).",
+                Style::default().fg(Color::Green),
+            )
         } else {
-            "No allocations tracked. Waiting for data..."
+            (
+                "No allocations tracked. Waiting for data...",
+                Style::default().fg(Color::Gray),
+            )
         };
-        vec![Row::new([Cell::from(msg)])
-            .style(Style::default().fg(Color::Gray))
-            .height(1)]
+        vec![Row::new([Cell::from(msg)]).style(style).height(1)]
     } else {
         items
             .iter()
