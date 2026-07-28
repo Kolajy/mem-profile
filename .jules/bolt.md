@@ -71,3 +71,6 @@
 ## 2026-07-27 - Avoid Vec<String> and .join() for string building
 **Learning:** Using an intermediate `Vec<String>` and calling `.join(";")` to build strings like folded stacks causes unnecessary dynamic memory allocations and heap churn.
 **Action:** Use a pre-allocated `String::with_capacity` buffer and directly push characters or mapped characters (using `.chars()`) in-place inside loops instead of collecting into a `Vec`.
+## 2024-11-21 - Zero-Allocation TUI Cache via Hoisted Buffers
+**Learning:** Instantiating temporary data structures (like `HashMap` and `Vec`) within the TUI event loop on every tick to process allocations causes continuous heap bucket allocations and severe garbage collection pressure, even if we wrap entries in `Arc`.
+**Action:** Hoist these temporary buffer collections (`raw_allocs`, `folded`, `items`) to the outer event loop (e.g. `run_app`) and pass them by mutable reference (`&mut`) into the processing functions. Use `.clear()` at the start of each tick to reuse the internal allocated capacity and eliminate O(N) heap allocations per frame.

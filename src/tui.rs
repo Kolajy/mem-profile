@@ -332,11 +332,21 @@ fn run_app<B: Backend>(
     let tick_rate = Duration::from_millis(250);
     let mut last_tick = Instant::now();
 
+    // Bolt: Hoist these temporary collections out of the render loop to prevent continuous heap allocation on every tick.
+    let mut raw_allocs_cache: HashMap<Vec<*mut std::ffi::c_void>, (usize, usize)> = HashMap::new();
+    let mut folded_cache: HashMap<Arc<String>, (usize, usize)> = HashMap::new();
+    let mut items: Vec<(Arc<String>, usize, usize)> = Vec::new();
+
     loop {
-        let items;
         {
             let mut app_lock = app.lock().unwrap();
-            items = get_active_allocations(app_lock.sort_by_size, &mut app_lock.symbol_cache);
+            get_active_allocations(
+                app_lock.sort_by_size,
+                &mut app_lock.symbol_cache,
+                &mut raw_allocs_cache,
+                &mut folded_cache,
+                &mut items,
+            );
 
             terminal.draw(|f| ui(f, &mut app_lock, &items))?;
         }
@@ -420,13 +430,17 @@ fn run_app<B: Backend>(
 fn get_active_allocations(
     sort_by_size: bool,
     symbol_cache: &mut HashMap<FramePtrs, Arc<String>>,
-) -> Vec<(Arc<String>, usize, usize)> {
+    raw_allocs: &mut HashMap<Vec<*mut std::ffi::c_void>, (usize, usize)>,
+    folded: &mut HashMap<Arc<String>, (usize, usize)>,
+    result: &mut Vec<(Arc<String>, usize, usize)>,
+) {
     crate::allocator::IN_ALLOCATOR.with(|in_alloc| {
         let was_in = in_alloc.get();
         in_alloc.set(true);
 
-        let mut raw_allocs: HashMap<Vec<*mut std::ffi::c_void>, (usize, usize)> = HashMap::new();
-        let mut folded: HashMap<Arc<String>, (usize, usize)> = HashMap::new();
+        raw_allocs.clear();
+        folded.clear();
+        result.clear();
 
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
@@ -450,7 +464,7 @@ fn get_active_allocations(
                 }
             }
         }
-        for (frames, (total_size, count)) in raw_allocs {
+        for (frames, (total_size, count)) in raw_allocs.drain() {
             // Bolt: Symbolication is extremely expensive. Memoize the resolved string representation
             // of raw backtrace pointers to prevent severe CPU bottlenecks during the TUI render loop.
             // Bolt: Avoid unconditional clone() of `frames` here by moving ownership into `FramePtrs`.
@@ -493,7 +507,7 @@ fn get_active_allocations(
             }
         }
 
-        let mut result: Vec<_> = folded.into_iter().map(|(k, v)| (k, v.0, v.1)).collect();
+        result.extend(folded.iter().map(|(k, v)| (Arc::clone(k), v.0, v.1)));
 
         if sort_by_size {
             result.sort_by(|a, b| b.1.cmp(&a.1));
@@ -502,7 +516,6 @@ fn get_active_allocations(
         }
 
         in_alloc.set(was_in);
-        result
     })
 }
 
