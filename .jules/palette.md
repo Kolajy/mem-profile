@@ -79,3 +79,7 @@
 ## 2026-07-29 - TUI 80-Column Layout Optimization
 **Learning:** In 80-column TUI terminals, long single-line titles containing both status and keybinds cause horizontal truncation. Empty state messages over 50 chars also truncate.
 **Action:** Constrain empty states under 50 chars and move static keybind hints to bottom footers using `title_bottom` to preserve primary content space and scannability.
+
+## 2024-05-18 - Contextual Lifecycle Labels in Real-time TUIs
+**Learning:** Using static labels like "Current RSS: " in a real-time TUI can cause cognitive dissonance when the monitored process exits and the value becomes fixed.
+**Action:** Always use conditionally rendered lifecycle labels (e.g., "Final RSS: " when `process_exited == true`) to provide clear closure and reduce ambiguity in monitoring tools.
