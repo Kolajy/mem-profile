@@ -78,3 +78,6 @@
 ## 2026-07-31 - Group identical backtraces inside locks before snapshot generation
 **Learning:** During snapshot dumping, simply looping over the allocator registry and cloning the backtrace `Vec` into a list for every single allocation caused severe `O(N)` heap memory bloat when there were millions of allocations of the same type.
 **Action:** Always group records into a map inside the registry extraction lock to reduce cloning and processing overhead to `O(U)` (where `U` is the number of unique entries).
+## 2024-11-23 - File descriptor caching
+**Learning:** Repeatedly opening and closing `/proc/{pid}/statm` in a tight loop creates unnecessary syscall overhead.
+**Action:** Cache the open `File` descriptor and use `.seek(SeekFrom::Start(0))` before `.read()` to reduce syscall overhead in high-frequency polling loops.

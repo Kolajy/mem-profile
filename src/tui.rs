@@ -18,8 +18,7 @@ use ratatui::{
 };
 use std::{
     collections::{HashMap, VecDeque},
-    fs::File,
-    io::{self, Read},
+    io,
     path::Path,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -69,6 +68,10 @@ pub fn run() {
         let start_time = Instant::now();
         // Bolt: Pre-allocate the statm_path string to prevent dynamic allocation on every polling tick
         let statm_path = format!("/proc/{}/statm", pid);
+        #[cfg(target_os = "linux")]
+        let mut statm_file: Option<std::fs::File> = None;
+        #[cfg(not(target_os = "linux"))]
+        let mut statm_file: Option<std::fs::File> = None;
 
         while is_running_clone.load(Ordering::Relaxed) {
             let is_paused;
@@ -78,7 +81,8 @@ pub fn run() {
             }
 
             if !is_paused {
-                if let Some(rss_bytes) = get_rss_bytes(pid, page_size, &statm_path) {
+                if let Some(rss_bytes) = get_rss_bytes(pid, page_size, &statm_path, &mut statm_file)
+                {
                     let mut app = app_clone.lock().unwrap();
                     let elapsed = start_time.elapsed().as_secs_f64();
                     let rss_f64 = rss_bytes as f64;
@@ -121,12 +125,29 @@ pub fn run() {
 }
 
 #[allow(unused_variables)]
-fn get_rss_bytes(pid: u32, page_size: u64, statm_path: &str) -> Option<u64> {
+fn get_rss_bytes(
+    pid: u32,
+    page_size: u64,
+    statm_path: &str,
+    statm_file: &mut Option<std::fs::File>,
+) -> Option<u64> {
     #[cfg(target_os = "linux")]
     {
-        if let Ok(mut file) = File::open(statm_path) {
+        use std::io::{Read, Seek, SeekFrom};
+        if statm_file.is_none() {
+            if let Ok(f) = std::fs::File::open(statm_path) {
+                *statm_file = Some(f);
+            } else {
+                return None;
+            }
+        }
+        if let Some(f) = statm_file {
+            if f.seek(SeekFrom::Start(0)).is_err() {
+                *statm_file = None;
+                return None;
+            }
             let mut buf = [0u8; 128];
-            if let Ok(n) = file.read(&mut buf) {
+            if let Ok(n) = f.read(&mut buf) {
                 if let Ok(content) = std::str::from_utf8(&buf[..n]) {
                     if let Some(resident_str) = content.split_whitespace().nth(1) {
                         if let Ok(resident) = resident_str.parse::<u64>() {
@@ -134,6 +155,8 @@ fn get_rss_bytes(pid: u32, page_size: u64, statm_path: &str) -> Option<u64> {
                         }
                     }
                 }
+            } else {
+                *statm_file = None;
             }
         }
     }
@@ -841,9 +864,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
             .borders(Borders::ALL)
             .border_style(border_style)
             .title(title_text)
-            .title_bottom(
-                Line::from(key_spans).alignment(ratatui::layout::Alignment::Right),
-            ),
+            .title_bottom(Line::from(key_spans).alignment(ratatui::layout::Alignment::Right)),
     )
     .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
     .highlight_symbol(">> ")

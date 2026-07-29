@@ -1,14 +1,19 @@
 #[cfg(target_os = "linux")]
 use std::fs::File;
 #[cfg(target_os = "linux")]
-use std::io::Read;
+use std::io::{Read, Seek, SeekFrom};
 use std::process::{exit, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
 #[cfg(target_os = "macos")]
-fn get_rss_bytes(pid: u32, _statm_path: &str, _page_size: u64) -> Option<u64> {
+fn get_rss_bytes(
+    pid: u32,
+    _statm_path: &str,
+    _page_size: u64,
+    _statm_file: &mut Option<std::fs::File>,
+) -> Option<u64> {
     let mut info: libc::proc_taskinfo = unsafe { std::mem::zeroed() };
     let res = unsafe {
         libc::proc_pidinfo(
@@ -26,10 +31,28 @@ fn get_rss_bytes(pid: u32, _statm_path: &str, _page_size: u64) -> Option<u64> {
 }
 
 #[cfg(target_os = "linux")]
-fn get_rss_bytes(_pid: u32, statm_path: &str, page_size: u64) -> Option<u64> {
-    if let Ok(mut file) = File::open(statm_path) {
+fn get_rss_bytes(
+    _pid: u32,
+    statm_path: &str,
+    page_size: u64,
+    statm_file: &mut Option<File>,
+) -> Option<u64> {
+    if statm_file.is_none() {
+        if let Ok(f) = File::open(statm_path) {
+            *statm_file = Some(f);
+        } else {
+            return None;
+        }
+    }
+
+    if let Some(f) = statm_file {
+        if f.seek(SeekFrom::Start(0)).is_err() {
+            *statm_file = None;
+            return None;
+        }
+
         let mut buf = [0u8; 128];
-        if let Ok(n) = file.read(&mut buf) {
+        if let Ok(n) = f.read(&mut buf) {
             if let Ok(content) = std::str::from_utf8(&buf[..n]) {
                 if let Some(resident_str) = content.split_whitespace().nth(1) {
                     if let Ok(resident) = resident_str.parse::<u64>() {
@@ -37,13 +60,20 @@ fn get_rss_bytes(_pid: u32, statm_path: &str, page_size: u64) -> Option<u64> {
                     }
                 }
             }
+        } else {
+            *statm_file = None;
         }
     }
     None
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-fn get_rss_bytes(_pid: u32, _statm_path: &str, _page_size: u64) -> Option<u64> {
+fn get_rss_bytes(
+    _pid: u32,
+    _statm_path: &str,
+    _page_size: u64,
+    _statm_file: &mut Option<std::fs::File>,
+) -> Option<u64> {
     None
 }
 
@@ -70,6 +100,10 @@ pub fn execute(command: String, args: Vec<String>) {
     let poller_thread = thread::spawn(move || {
         let statm_path = format!("/proc/{}/statm", pid);
         let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) } as u64;
+        #[cfg(target_os = "linux")]
+        let mut statm_file: Option<std::fs::File> = None;
+        #[cfg(not(target_os = "linux"))]
+        let mut statm_file: Option<std::fs::File> = None;
 
         loop {
             if let Ok(guard) = is_running_clone.lock() {
@@ -79,7 +113,8 @@ pub fn execute(command: String, args: Vec<String>) {
             } else {
                 break;
             }
-            if let Some(current_bytes) = get_rss_bytes(pid, &statm_path, page_size) {
+            if let Some(current_bytes) = get_rss_bytes(pid, &statm_path, page_size, &mut statm_file)
+            {
                 if let Ok(mut peak) = peak_rss_bytes_clone.lock() {
                     if current_bytes > *peak {
                         *peak = current_bytes;
