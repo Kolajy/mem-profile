@@ -589,17 +589,20 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
                 .fg(Color::Green)
                 .add_modifier(Modifier::BOLD),
         ));
-    } else {
-        spans.push(Span::raw(" | Keys: "));
+    }
+
+    let mut key_spans = vec![];
+    if !show_flash {
+        key_spans.push(Span::raw(" Keys: "));
         if !app.process_exited {
-            spans.push(Span::styled("[p/Space]", key_style));
-            spans.push(Span::raw(if app.is_paused {
+            key_spans.push(Span::styled("[p/Space]", key_style));
+            key_spans.push(Span::raw(if app.is_paused {
                 " resume, "
             } else {
                 " pause, "
             }));
         }
-        spans.extend(vec![
+        key_spans.extend(vec![
             Span::styled("[s]", key_style),
             Span::raw("napshot, "),
             Span::styled("[r]", key_style),
@@ -776,7 +779,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     let rows: Vec<Row> = if items.is_empty() {
         let (msg, style) = if app.process_exited {
             (
-                "✓ No active allocations remaining (Zero leaks detected).",
+                "✓ Zero leaks detected. No active allocations.",
                 Style::default().fg(Color::Green),
             )
         } else {
@@ -837,7 +840,10 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
         Block::default()
             .borders(Borders::ALL)
             .border_style(border_style)
-            .title(title_text),
+            .title(title_text)
+            .title_bottom(
+                Line::from(key_spans).alignment(ratatui::layout::Alignment::Right),
+            ),
     )
     .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
     .highlight_symbol(">> ")

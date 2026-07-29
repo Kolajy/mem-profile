@@ -76,3 +76,6 @@
 ## 2026-07-28 - [TUI Success Empty States]
 **Learning:** When an empty state represents a successful outcome (like zero memory leaks at the end of a profiling session), generic messaging like 'No data collected' creates ambiguity and doubt.
 **Action:** Use explicit success messaging (e.g., 'Zero leaks detected') and positive styling (e.g., green text) to reassure the user of the successful outcome.
+## 2026-07-29 - TUI 80-Column Layout Optimization
+**Learning:** In 80-column TUI terminals, long single-line titles containing both status and keybinds cause horizontal truncation. Empty state messages over 50 chars also truncate.
+**Action:** Constrain empty states under 50 chars and move static keybind hints to bottom footers using `title_bottom` to preserve primary content space and scannability.
