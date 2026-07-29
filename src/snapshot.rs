@@ -48,7 +48,10 @@ pub fn setup_signal_handlers() {
 }
 
 pub fn dump_to_file(path: &Path) {
-    let mut grouped_allocations: std::collections::HashMap<Vec<*mut std::ffi::c_void>, (usize, usize)> = std::collections::HashMap::new();
+    let mut grouped_allocations: std::collections::HashMap<
+        Vec<*mut std::ffi::c_void>,
+        (usize, usize),
+    > = std::collections::HashMap::new();
     let mut total_bytes = 0;
     let mut total_alloc_count = 0;
 
@@ -101,7 +104,13 @@ pub fn dump_to_file(path: &Path) {
 
     // Bolt: Grouping allocations by unique backtraces avoids O(N) backtrace cloning and implicitly avoids expensive repeated symbolication.
     for (i, (frames, (size, count))) in grouped_allocations.iter().enumerate() {
-        let _ = writeln!(buf_writer, "\nAllocation Group {}: {} bytes ({} allocations)", i + 1, size, count);
+        let _ = writeln!(
+            buf_writer,
+            "\nAllocation Group {}: {} bytes ({} allocations)",
+            i + 1,
+            size,
+            count
+        );
 
         let symbols = symbolicate_frames(frames);
         if symbols.is_empty() {
