@@ -71,11 +71,19 @@ pub fn execute(command: String, args: Vec<String>) {
         let statm_path = format!("/proc/{}/statm", pid);
         let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) } as u64;
 
-        while *is_running_clone.lock().unwrap() {
+        loop {
+            if let Ok(guard) = is_running_clone.lock() {
+                if !*guard {
+                    break;
+                }
+            } else {
+                break;
+            }
             if let Some(current_bytes) = get_rss_bytes(pid, &statm_path, page_size) {
-                let mut peak = peak_rss_bytes_clone.lock().unwrap();
-                if current_bytes > *peak {
-                    *peak = current_bytes;
+                if let Ok(mut peak) = peak_rss_bytes_clone.lock() {
+                    if current_bytes > *peak {
+                        *peak = current_bytes;
+                    }
                 }
             }
             thread::sleep(Duration::from_millis(10));
@@ -86,16 +94,24 @@ pub fn execute(command: String, args: Vec<String>) {
         Ok(s) => s,
         Err(err) => {
             eprintln!("Failed to wait on child: {}", err);
-            *is_running.lock().unwrap() = false;
+            if let Ok(mut running) = is_running.lock() {
+                *running = false;
+            }
             let _ = poller_thread.join();
             exit(1);
         }
     };
 
-    *is_running.lock().unwrap() = false;
+    if let Ok(mut running) = is_running.lock() {
+        *running = false;
+    }
     let _ = poller_thread.join();
 
-    let peak_rss_bytes_val = *peak_rss_bytes.lock().unwrap();
+    let peak_rss_bytes_val = if let Ok(peak) = peak_rss_bytes.lock() {
+        *peak
+    } else {
+        0u64
+    };
     let peak_rss_mb = peak_rss_bytes_val as f64 / (1024.0 * 1024.0);
 
     eprintln!("\n=== Memory Profile ===");

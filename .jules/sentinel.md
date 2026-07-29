@@ -7,10 +7,12 @@
 **Vulnerability:** Even with secure file permissions (0o600), creating files like profiling snapshots in predictable locations (e.g. `snapshot_sigusr1.txt`) is vulnerable to symlink attacks. An attacker could pre-create a symlink at the expected location pointing to a sensitive file (e.g. `/etc/shadow`), causing the profiler to overwrite it.
 **Learning:** Hardening file creation requires preventing the following of symlinks when opening or creating files that contain runtime data or logs.
 **Prevention:** Use `std::fs::OpenOptions` with `.custom_flags(libc::O_NOFOLLOW)` on Unix systems to ensure file creation fails if the target path is a symbolic link.
+
 ## 2024-07-15 - [Prevent Hardlink Attacks with create_new]
 **Vulnerability:** Files created with predictible names (e.g., `tui_snapshot.txt`) using `OpenOptions::create(true).truncate(true)` are vulnerable to Arbitrary File Overwrite via hardlink attacks, even if `O_NOFOLLOW` is used (which only protects against symlinks).
 **Learning:** Hardlink attacks bypass symlink protections. To safely write dumps or reports to predictable locations, the application must ensure the file does not already exist.
 **Prevention:** Use unpredictable filenames (like appending a timestamp) and use `OpenOptions::create_new(true)` to safely enforce that the file being written does not exist prior to creation.
+
 ## 2024-07-16 - [Safe File Overwrites via Atomic Rename]
 **Vulnerability:** When writing to paths provided by users where backward-compatible overwriting is necessary, relying solely on `OpenOptions::create_new(true)` will break functionality (by preventing overwrite entirely), while `create(true).truncate(true)` allows Arbitrary File Overwrite via hardlinks.
 **Learning:** To safely support expected file overwriting without exposing the application to hardlink vulnerabilities, writing must be atomic.
@@ -35,14 +37,17 @@
 **Vulnerability:** Checking file metadata (e.g., `is_file()` or `len()`) using `fs::metadata(path)` and then subsequently reading the file using `fs::read_to_string(path)` creates a Time-of-Check to Time-of-Use (TOCTOU) race condition. An attacker can swap the regular file for a malicious file (like a device node or named pipe) between the check and the read, leading to arbitrary data ingestion and possible memory exhaustion (DoS).
 **Learning:** File metadata validation and the subsequent read operation must be performed on the exact same file handle to prevent file swapping.
 **Prevention:** Open the file first with `File::open(path)`, read the metadata using `file.metadata()`, validate it, and then read the contents from the same `file` handle using methods like `file.take(max_size).read_to_string()`.
+
 ## 2024-07-26 - [Prevent DoS via libc::kill Wrap-around]
 **Vulnerability:** Passing an unvalidated `u32` (like a PID from user input) directly to `libc::kill` via `pid as i32` can cause integer overflow (wrap-around) if the PID exceeds `i32::MAX`. This causes `kill` to receive a negative value (e.g., `-1`), which instructs the OS to send the signal to all processes the user has permission to signal, potentially leading to widespread Denial of Service (DoS).
 **Learning:** System calls that accept signed integers (like `i32` in `libc::kill`) must have input strictly validated to prevent unintended boundary crossovers (e.g., positive turning into negative) when casting from unsigned inputs.
 **Prevention:** Always validate that external unsigned integers fit within the safe positive range of the target signed integer type (e.g., `pid > 0 && pid <= i32::MAX as u32`) before casting and passing them to unsafe FFI functions.
+
 ## 2024-08-15 - [Graceful Degradation for System Input Failures]
 **Vulnerability:** System-dependent operations like resolving the executable path (`env::current_exe()`) and terminal setup (`Terminal::new()`) use `.unwrap()` and `.expect()`. If these OS-level calls fail, the application panics, leaking internal stack traces (Information Disclosure) and abruptly crashing the TUI without cleanup (Terminal DoS).
 **Learning:** Terminal inputs and environmental system calls must be treated as external, unpredictable inputs. Using panics for error handling here exposes the application to DoS vectors and information leakage, violating the principle of failing securely.
 **Prevention:** To prevent leaking internal stack traces to end users or causing abrupt application crashes (DoS) during startup, avoid using `.unwrap()` or `.expect()` for system and setup operations (e.g., `env::current_exe`, terminal initialization). Instead, implement graceful error handling using `match` or `if let Err` to log a clean error message and exit securely.
+
 ## 2024-08-16 - [Graceful Degradation for Mutex Locking]
 **Vulnerability:** When a thread panics while holding a Mutex lock, the Mutex becomes poisoned. If another thread tries to acquire the poisoned lock using `.lock().unwrap()`, it will also panic, potentially crashing the entire application (DoS).
 **Learning:** Mutex locks should be acquired safely using `.lock()` or `if let Ok(guard) = ...` instead of `.unwrap()`, especially in cleanup or teardown routines, to prevent cascading failures.
