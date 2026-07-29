@@ -154,19 +154,20 @@ fn main() {
         while is_running_clone.load(Ordering::Relaxed) {
             if let Some(rss) = get_rss(&statm_path, page_size) {
                 if rss > 0 {
-                    let mut data = rss_data_clone.lock().unwrap();
-                    data.push(rss as f64);
-                    if data.len() >= limit {
-                        let mut new_data = Vec::with_capacity(limit / 2);
-                        for chunk in data.chunks(2) {
-                            if chunk.len() == 2 {
-                                new_data.push(chunk[0].max(chunk[1]));
-                            } else {
-                                new_data.push(chunk[0]);
+                    if let Ok(mut data) = rss_data_clone.lock() {
+                        data.push(rss as f64);
+                        if data.len() >= limit {
+                            let mut new_data = Vec::with_capacity(limit / 2);
+                            for chunk in data.chunks(2) {
+                                if chunk.len() == 2 {
+                                    new_data.push(chunk[0].max(chunk[1]));
+                                } else {
+                                    new_data.push(chunk[0]);
+                                }
                             }
+                            *data = new_data;
+                            sleep_time *= 2;
                         }
-                        *data = new_data;
-                        sleep_time *= 2;
                     }
                 }
             }
