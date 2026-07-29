@@ -1,6 +1,5 @@
 use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
-use std::fmt::Write as FmtWrite;
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write as _};
 #[cfg(unix)]
@@ -49,8 +48,9 @@ pub fn setup_signal_handlers() {
 }
 
 pub fn dump_to_file(path: &Path) {
-    let mut allocations = Vec::new();
+    let mut grouped_allocations: std::collections::HashMap<Vec<*mut std::ffi::c_void>, (usize, usize)> = std::collections::HashMap::new();
     let mut total_bytes = 0;
+    let mut total_alloc_count = 0;
 
     crate::allocator::IN_ALLOCATOR.with(|in_alloc| {
         let was_in = in_alloc.get();
@@ -58,9 +58,15 @@ pub fn dump_to_file(path: &Path) {
 
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
-                for (ptr, meta) in shard.iter() {
-                    allocations.push((*ptr, meta.size, meta.backtrace.clone()));
+                for (_, meta) in shard.iter() {
                     total_bytes += meta.size;
+                    total_alloc_count += 1;
+                    if let Some(entry) = grouped_allocations.get_mut(&meta.backtrace) {
+                        entry.0 += meta.size;
+                        entry.1 += 1;
+                    } else {
+                        grouped_allocations.insert(meta.backtrace.clone(), (meta.size, 1));
+                    }
                 }
             }
         }
@@ -90,35 +96,25 @@ pub fn dump_to_file(path: &Path) {
     let mut buf_writer = BufWriter::new(file);
 
     let _ = writeln!(buf_writer, "Memory Snapshot");
-    let _ = writeln!(buf_writer, "Total Allocations: {}", allocations.len());
+    let _ = writeln!(buf_writer, "Total Allocations: {}", total_alloc_count);
     let _ = writeln!(buf_writer, "Total Bytes: {}", total_bytes);
 
-    // Bolt: Cache formatted stack traces to avoid extremely expensive repeated symbolication
-    let mut symbol_cache: std::collections::HashMap<&Vec<*mut std::ffi::c_void>, String> =
-        std::collections::HashMap::new();
+    // Bolt: Grouping allocations by unique backtraces avoids O(N) backtrace cloning and implicitly avoids expensive repeated symbolication.
+    for (i, (frames, (size, count))) in grouped_allocations.iter().enumerate() {
+        let _ = writeln!(buf_writer, "\nAllocation Group {}: {} bytes ({} allocations)", i + 1, size, count);
 
-    for (i, (_ptr, size, frames)) in allocations.iter().enumerate() {
-        let _ = writeln!(buf_writer, "\nAllocation {}: {} bytes", i + 1, size);
-
-        let trace_str = symbol_cache.entry(frames).or_insert_with(|| {
-            let symbols = symbolicate_frames(frames);
-            if symbols.is_empty() {
-                "  <no backtrace captured>\n".to_string()
-            } else {
-                let mut buf = String::new();
-                for (idx, sym) in symbols.iter().enumerate() {
-                    let name = sym.name.as_deref().unwrap_or("<unknown>");
-                    if name.contains("mem_profile::") || name.contains("backtrace::") {
-                        continue;
-                    }
-                    let _ = writeln!(&mut buf, "    #{}: {}", idx, sym);
+        let symbols = symbolicate_frames(frames);
+        if symbols.is_empty() {
+            let _ = writeln!(buf_writer, "  <no backtrace captured>");
+        } else {
+            for (idx, sym) in symbols.iter().enumerate() {
+                let name = sym.name.as_deref().unwrap_or("<unknown>");
+                if name.contains("mem_profile::") || name.contains("backtrace::") {
+                    continue;
                 }
-                buf
+                let _ = writeln!(buf_writer, "    #{}: {}", idx, sym);
             }
-        });
-
-        // Write the cached formatted string directly
-        let _ = write!(buf_writer, "{}", trace_str);
+        }
     }
 
     drop(buf_writer);
