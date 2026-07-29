@@ -74,3 +74,7 @@
 ## 2024-11-21 - Zero-Allocation TUI Cache via Hoisted Buffers
 **Learning:** Instantiating temporary data structures (like `HashMap` and `Vec`) within the TUI event loop on every tick to process allocations causes continuous heap bucket allocations and severe garbage collection pressure, even if we wrap entries in `Arc`.
 **Action:** Hoist these temporary buffer collections (`raw_allocs`, `folded`, `items`) to the outer event loop (e.g. `run_app`) and pass them by mutable reference (`&mut`) into the processing functions. Use `.clear()` at the start of each tick to reuse the internal allocated capacity and eliminate O(N) heap allocations per frame.
+
+## 2026-07-31 - Group identical backtraces inside locks before snapshot generation
+**Learning:** During snapshot dumping, simply looping over the allocator registry and cloning the backtrace `Vec` into a list for every single allocation caused severe `O(N)` heap memory bloat when there were millions of allocations of the same type.
+**Action:** Always group records into a map inside the registry extraction lock to reduce cloning and processing overhead to `O(U)` (where `U` is the number of unique entries).
