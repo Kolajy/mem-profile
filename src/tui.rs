@@ -657,7 +657,11 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     };
 
     let info_line = Line::from(vec![
-        Span::raw("Current RSS: "),
+        Span::raw(if app.process_exited {
+            "Final RSS: "
+        } else {
+            "Current RSS: "
+        }),
         Span::styled(
             current_rss,
             Style::default()
@@ -783,7 +787,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
 
     // Bolt: Zero-allocation optimization: Use array instead of vec! to prevent heap allocations for table headers every render tick.
     let header_cells = [
-        Cell::from("Backtrace").style(Style::default().fg(Color::Yellow)),
+        Cell::from("Backtrace (leaf <- root)").style(Style::default().fg(Color::Yellow)),
         Cell::from(
             ratatui::text::Line::from(size_header).alignment(ratatui::layout::Alignment::Right),
         )
