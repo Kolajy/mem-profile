@@ -76,28 +76,37 @@ pub fn run() {
         while is_running_clone.load(Ordering::Relaxed) {
             let is_paused;
             {
-                let app = app_clone.lock().unwrap();
-                is_paused = app.is_paused;
+                if let Ok(app) = app_clone.lock() {
+                    is_paused = app.is_paused;
+                } else {
+                    break;
+                }
             }
 
             if !is_paused {
                 if let Some(rss_bytes) = get_rss_bytes(pid, page_size, &statm_path, &mut statm_file)
                 {
-                    let mut app = app_clone.lock().unwrap();
-                    let elapsed = start_time.elapsed().as_secs_f64();
-                    let rss_f64 = rss_bytes as f64;
-                    app.rss_history.push_back((elapsed, rss_f64));
-                    if rss_f64 > app.peak_rss {
-                        app.peak_rss = rss_f64;
-                    }
-                    // keep only last N points to avoid unbounded growth
-                    if app.rss_history.len() > 1000 {
-                        app.rss_history.pop_front();
+                    if let Ok(mut app) = app_clone.lock() {
+                        let elapsed = start_time.elapsed().as_secs_f64();
+                        let rss_f64 = rss_bytes as f64;
+                        app.rss_history.push_back((elapsed, rss_f64));
+                        if rss_f64 > app.peak_rss {
+                            app.peak_rss = rss_f64;
+                        }
+                        // keep only last N points to avoid unbounded growth
+                        if app.rss_history.len() > 1000 {
+                            app.rss_history.pop_front();
+                        }
+                    } else {
+                        break;
                     }
                 } else {
                     // Process died or can't read
-                    let mut app = app_clone.lock().unwrap();
-                    app.process_exited = true;
+                    if let Ok(mut app) = app_clone.lock() {
+                        app.process_exited = true;
+                    } else {
+                        break;
+                    }
                 }
             }
 
@@ -361,16 +370,19 @@ fn run_app<B: Backend>(
 
     loop {
         {
-            let mut app_lock = app.lock().unwrap();
-            get_active_allocations(
-                app_lock.sort_by_size,
-                &mut app_lock.symbol_cache,
-                &mut raw_allocs_cache,
-                &mut folded_cache,
-                &mut items,
-            );
+            if let Ok(mut app_lock) = app.lock() {
+                get_active_allocations(
+                    app_lock.sort_by_size,
+                    &mut app_lock.symbol_cache,
+                    &mut raw_allocs_cache,
+                    &mut folded_cache,
+                    &mut items,
+                );
 
-            terminal.draw(|f| ui(f, &mut app_lock, &items))?;
+                terminal.draw(|f| ui(f, &mut app_lock, &items))?;
+            } else {
+                return Err(io::Error::new(io::ErrorKind::Other, "App mutex poisoned"));
+            }
         }
 
         let timeout = tick_rate
@@ -380,7 +392,10 @@ fn run_app<B: Backend>(
         if crossterm::event::poll(timeout)? {
             match event::read()? {
                 Event::Key(key) => {
-                    let mut app_lock = app.lock().unwrap();
+                    let mut app_lock = match app.lock() {
+                        Ok(lock) => lock,
+                        Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "App mutex poisoned")),
+                    };
                     match key.code {
                         KeyCode::Char('q') | KeyCode::Esc => {
                             return Ok(());
@@ -431,7 +446,10 @@ fn run_app<B: Backend>(
                     }
                 }
                 Event::Mouse(mouse) => {
-                    let mut app_lock = app.lock().unwrap();
+                    let mut app_lock = match app.lock() {
+                        Ok(lock) => lock,
+                        Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "App mutex poisoned")),
+                    };
                     match mouse.kind {
                         event::MouseEventKind::ScrollDown => app_lock.scroll_down(items.len()),
                         event::MouseEventKind::ScrollUp => app_lock.scroll_up(items.len()),
