@@ -1,5 +1,6 @@
 use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
+use num_format::{Locale, ToFormattedString};
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write as _};
 #[cfg(unix)]
@@ -99,17 +100,25 @@ pub fn dump_to_file(path: &Path) {
     let mut buf_writer = BufWriter::new(file);
 
     let _ = writeln!(buf_writer, "Memory Snapshot");
-    let _ = writeln!(buf_writer, "Total Allocations: {}", total_alloc_count);
-    let _ = writeln!(buf_writer, "Total Bytes: {}", total_bytes);
+    let _ = writeln!(
+        buf_writer,
+        "Total Allocations: {}",
+        total_alloc_count.to_formatted_string(&Locale::en)
+    );
+    let _ = writeln!(
+        buf_writer,
+        "Total Bytes: {}",
+        total_bytes.to_formatted_string(&Locale::en)
+    );
 
     // Bolt: Grouping allocations by unique backtraces avoids O(N) backtrace cloning and implicitly avoids expensive repeated symbolication.
     for (i, (frames, (size, count))) in grouped_allocations.iter().enumerate() {
         let _ = writeln!(
             buf_writer,
             "\nAllocation Group {}: {} bytes ({} allocations)",
-            i + 1,
-            size,
-            count
+            (i + 1).to_formatted_string(&Locale::en),
+            size.to_formatted_string(&Locale::en),
+            count.to_formatted_string(&Locale::en)
         );
 
         let symbols = symbolicate_frames(frames);

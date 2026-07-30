@@ -1,6 +1,7 @@
 use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
 use inferno::flamegraph::{from_reader, Options};
+use num_format::{Locale, ToFormattedString};
 use std::collections::HashMap;
 use std::fmt::Write as _;
 use std::fs::OpenOptions;
@@ -50,12 +51,16 @@ pub fn print_leak_report() {
         eprintln!("========================================================================");
         eprintln!(
             "Detected {} unique leak stack(s) totaling {} bytes.\n",
-            raw_leaks.len(),
-            total_bytes
+            raw_leaks.len().to_formatted_string(&Locale::en),
+            total_bytes.to_formatted_string(&Locale::en)
         );
 
         for (i, (frames, size)) in raw_leaks.iter().enumerate() {
-            eprintln!("Leak Stack {}: {} bytes", i + 1, size);
+            eprintln!(
+                "Leak Stack {}: {} bytes",
+                (i + 1).to_formatted_string(&Locale::en),
+                size.to_formatted_string(&Locale::en)
+            );
 
             let symbols = symbolicate_frames(frames);
             if symbols.is_empty() {
@@ -166,8 +171,7 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
 
         // Write out the flamegraph SVG to a temporary file
         let file = options.open(&tmp_path)?;
-        let result =
-            from_reader(&mut opts, &mut cursor, file).map_err(std::io::Error::other);
+        let result = from_reader(&mut opts, &mut cursor, file).map_err(std::io::Error::other);
 
         if result.is_ok() {
             // Atomically rename to target path to avoid hardlink arbitrary file overwrite vulnerabilities
