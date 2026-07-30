@@ -1,3 +1,4 @@
+use num_format::{Locale, ToFormattedString};
 #[cfg(target_os = "linux")]
 use std::fs::File;
 #[cfg(target_os = "linux")]
@@ -153,7 +154,8 @@ pub fn execute(command: String, args: Vec<String>) {
     eprintln!("Command: {} {:?}", command, args);
     eprintln!(
         "Peak RSS: {:.2} MB ({} bytes)",
-        peak_rss_mb, peak_rss_bytes_val
+        peak_rss_mb,
+        peak_rss_bytes_val.to_formatted_string(&Locale::en)
     );
 
     if !status.success() {
