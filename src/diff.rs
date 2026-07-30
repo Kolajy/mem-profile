@@ -13,36 +13,12 @@ pub struct AllocationStats {
 // Let's assume the snapshot output is standard JSON map of stack to size and count
 // We will write a tiny bespoke JSON parser to avoid adding serde dependencies
 
-fn parse_json_map<'a>(json: &'a str) -> HashMap<&'a str, AllocationStats> {
+fn parse_json_map(json: &str) -> HashMap<&str, AllocationStats> {
     let mut result = HashMap::new();
 
     // Simplistic parser: look for "stack", "size", "count" if array
     // Since we originally saved as HashMap<String, AllocationStats>, it'll be formatted like:
     // {"main;foo":{"size":100,"count":1},"main;bar":{"size":200,"count":2}}
-
-    let mut in_string = false;
-    let mut chars = json.chars().peekable();
-
-    while let Some(c) = chars.next() {
-        if c == '"' {
-            in_string = !in_string;
-            if in_string {
-                // Read string
-                let mut s = String::new();
-                while let Some(&c2) = chars.peek() {
-                    if c2 == '"' {
-                        chars.next();
-                        break;
-                    }
-                    s.push(c2);
-                    chars.next();
-                }
-
-                // If this is a key at the root level, we should expect a colon next
-                // Let's do a simpler string matching instead of full character parsing
-            }
-        }
-    }
 
     // An even simpler approach: regex or string find
     // Because we just need to parse {"key": {"size": X, "count": Y}}
@@ -87,7 +63,7 @@ fn parse_json_map<'a>(json: &'a str) -> HashMap<&'a str, AllocationStats> {
 }
 
 // Format: [ {"stack": "...", "size": 123, "count": 1}, ... ]
-fn parse_json_array<'a>(json: &'a str) -> HashMap<&'a str, AllocationStats> {
+fn parse_json_array(json: &str) -> HashMap<&str, AllocationStats> {
     let mut result = HashMap::new();
 
     let mut parts_iter = json.split("\"stack\":");

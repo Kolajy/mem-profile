@@ -598,7 +598,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
 
     let show_flash = app
         .last_snapshot_time
-        .map_or(false, |time| time.elapsed() < Duration::from_secs(3));
+        .is_some_and(|time| time.elapsed() < Duration::from_secs(3));
 
     if show_flash {
         let msg = if let Some(ref name) = app.last_snapshot_name {
