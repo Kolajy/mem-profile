@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Seek, SeekFrom};
 use std::process::exit;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -40,6 +40,7 @@ pub fn execute(pid: u32) {
 
     let statm_path = format!("/proc/{}/statm", pid);
     let mut peak_rss_pages = 0u64;
+    let mut statm_file: Option<File> = None;
 
     while !is_interrupted.load(Ordering::SeqCst) {
         // Check if process is still alive
@@ -48,7 +49,20 @@ pub fn execute(pid: u32) {
             break;
         }
 
-        if let Ok(mut file) = File::open(&statm_path) {
+        // ⚡ Bolt: Cache open file descriptors to significantly reduce syscall overhead
+        // during high-frequency polling loops by bypassing open/close on every tick.
+        if statm_file.is_none() {
+            if let Ok(f) = File::open(&statm_path) {
+                statm_file = Some(f);
+            }
+        }
+
+        if let Some(file) = &mut statm_file {
+            // ⚡ Bolt: Rewind the cursor instead of reopening to read updated process metrics
+            if file.seek(SeekFrom::Start(0)).is_err() {
+                break;
+            }
+
             let mut buf = [0u8; 128];
             if let Ok(n) = file.read(&mut buf) {
                 if let Ok(content) = std::str::from_utf8(&buf[..n]) {

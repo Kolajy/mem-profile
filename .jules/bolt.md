@@ -84,3 +84,6 @@
 ## 2024-05-19 - Remove Dead Code Loops in Hot Paths
 **Learning:** Sometimes entire loops are left in codebase from previous iterations. When reviewing string parsing logic (like `parse_json_map` in `diff.rs`), look out for `while` loops that allocate memory inside the loop body but never use the resulting variable, simply discarding it on every iteration.
 **Action:** Before optimizing a string allocation loop, double-check if the resulting variable is even used. If it's a dead code loop, removing it entirely offers massive performance gains by avoiding both O(N) iteration and associated allocations.
+## 2024-11-23 - File descriptor caching
+**Learning:** Repeatedly opening and closing `/proc/{pid}/statm` in a tight loop creates unnecessary syscall overhead.
+**Action:** Cache the open `File` descriptor and use `.seek(SeekFrom::Start(0))` before `.read()` to reduce syscall overhead in high-frequency polling loops.

@@ -1,14 +1,29 @@
 use std::env;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Seek, SeekFrom};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
-fn get_rss(statm_path: &str, page_size: u64) -> Option<u64> {
-    if let Ok(mut file) = File::open(statm_path) {
+fn get_rss(statm_path: &str, page_size: u64, statm_file: &mut Option<File>) -> Option<u64> {
+    // ⚡ Bolt: Cache open file descriptors to significantly reduce syscall overhead
+    // during high-frequency polling loops by bypassing open/close on every tick.
+    if statm_file.is_none() {
+        if let Ok(f) = File::open(statm_path) {
+            *statm_file = Some(f);
+        } else {
+            return None;
+        }
+    }
+
+    if let Some(file) = statm_file {
+        if file.seek(SeekFrom::Start(0)).is_err() {
+            *statm_file = None;
+            return None;
+        }
+
         let mut buf = [0u8; 128];
         if let Ok(n) = file.read(&mut buf) {
             if let Ok(contents) = std::str::from_utf8(&buf[..n]) {
@@ -18,6 +33,8 @@ fn get_rss(statm_path: &str, page_size: u64) -> Option<u64> {
                     }
                 }
             }
+        } else {
+            *statm_file = None;
         }
     }
     None
@@ -151,8 +168,9 @@ fn main() {
     let monitor_thread = thread::spawn(move || {
         let mut sleep_time = 100;
         let limit = 8192;
+        let mut statm_file: Option<File> = None;
         while is_running_clone.load(Ordering::Relaxed) {
-            if let Some(rss) = get_rss(&statm_path, page_size) {
+            if let Some(rss) = get_rss(&statm_path, page_size, &mut statm_file) {
                 if rss > 0 {
                     if let Ok(mut data) = rss_data_clone.lock() {
                         data.push(rss as f64);
