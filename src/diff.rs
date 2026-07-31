@@ -135,7 +135,9 @@ fn read_securely(path: &str) -> std::io::Result<String> {
             format!("{} exceeds maximum allowed size (256 MB)", path),
         ));
     }
-    let mut content = String::new();
+    // ⚡ Bolt: Pre-allocate the String buffer to exactly the file size to prevent
+    // multiple expensive dynamic heap reallocations when reading large memory snapshots.
+    let mut content = String::with_capacity(meta.len() as usize);
     file.take(max_size).read_to_string(&mut content)?;
     Ok(content)
 }
