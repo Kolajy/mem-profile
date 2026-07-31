@@ -1,3 +1,4 @@
+use num_format::{Locale, ToFormattedString};
 use std::fs::File;
 use std::io::Read;
 use std::process::exit;
@@ -79,5 +80,9 @@ pub fn execute(pid: u32) {
 
     eprintln!("\n=== Memory Profile ===");
     eprintln!("PID: {}", pid);
-    eprintln!("Peak RSS: {:.2} MB ({} bytes)", peak_rss_mb, peak_rss_bytes);
+    eprintln!(
+        "Peak RSS: {:.2} MB ({} bytes)",
+        peak_rss_mb,
+        peak_rss_bytes.to_formatted_string(&Locale::en)
+    );
 }
