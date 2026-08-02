@@ -48,7 +48,7 @@ pub fn capture_raw_backtrace() -> Vec<*mut std::ffi::c_void> {
 /// Symbolicates raw instruction pointers into human-readable SymbolInfo.
 #[cfg(feature = "capture-backtrace")]
 pub fn symbolicate_frames(frames: &[*mut std::ffi::c_void]) -> Vec<SymbolInfo> {
-    let mut symbols = Vec::new();
+    let mut symbols = Vec::with_capacity(frames.len());
     for &frame in frames {
         backtrace::resolve(frame, |symbol| {
             symbols.push(SymbolInfo {

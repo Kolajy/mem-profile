@@ -76,7 +76,7 @@ pub fn export_folded_stacks() -> String {
         in_alloc.set(was_in);
     });
 
-    let mut output = String::new();
+    let mut output = String::with_capacity(stacks.len() * 128);
     // Sort keys to have deterministic output (useful for testing and diffing)
     let mut sorted_keys: Vec<_> = stacks.keys().collect();
     sorted_keys.sort();
