@@ -83,3 +83,6 @@
 ## 2024-05-18 - Contextual Lifecycle Labels in Real-time TUIs
 **Learning:** Using static labels like "Current RSS: " in a real-time TUI can cause cognitive dissonance when the monitored process exits and the value becomes fixed.
 **Action:** Always use conditionally rendered lifecycle labels (e.g., "Final RSS: " when `process_exited == true`) to provide clear closure and reduce ambiguity in monitoring tools.
+## 2024-11-20 - [TUI Flash Messages Truncation]
+**Learning:** In terminal user interfaces with strict width constraints (e.g., 80-column defaults), temporary flash messages (like success toasts) can easily be horizontally truncated if static lower-priority information (like permanent keybind hints) persistently occupies the space.
+**Action:** Conditionally hide lower-priority permanent information (like static keybind hints) when temporary flash messages are active to ensure the feedback is prominently visible without truncating.

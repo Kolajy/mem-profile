@@ -616,28 +616,26 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     let key_style = Style::default()
         .fg(Color::Cyan)
         .add_modifier(Modifier::BOLD);
-    let mut spans = vec![Span::raw(app.pid_title.as_str()), status_span];
+    let spans = vec![Span::raw(app.pid_title.as_str()), status_span];
 
     let show_flash = app
         .last_snapshot_time
         .is_some_and(|time| time.elapsed() < Duration::from_secs(3));
 
+    let mut key_spans = vec![];
     if show_flash {
         let msg = if let Some(ref name) = app.last_snapshot_name {
-            format!(" | Snapshot saved to {}! ", name)
+            format!(" Snapshot saved to {}! ", name)
         } else {
-            " | Snapshot Saved! ".to_string()
+            " Snapshot Saved! ".to_string()
         };
-        spans.push(Span::styled(
+        key_spans.push(Span::styled(
             msg,
             Style::default()
                 .fg(Color::Green)
                 .add_modifier(Modifier::BOLD),
         ));
-    }
-
-    let mut key_spans = vec![];
-    if !show_flash {
+    } else {
         key_spans.push(Span::raw(" Keys: "));
         if !app.process_exited {
             key_spans.push(Span::styled("[p/Space]", key_style));
