@@ -87,3 +87,6 @@
 ## 2024-11-23 - File descriptor caching
 **Learning:** Repeatedly opening and closing `/proc/{pid}/statm` in a tight loop creates unnecessary syscall overhead.
 **Action:** Cache the open `File` descriptor and use `.seek(SeekFrom::Start(0))` before `.read()` to reduce syscall overhead in high-frequency polling loops.
+## 2024-05-19 - Pre-allocate Collections to Prevent Reallocations
+**Learning:** Initializing `Vec` or `String` buffers using `::new()` inside hot paths for large data mapping—like `symbolicate_frames` (which creates a `Vec` for every captured backtrace) or profiling dumps (which construct strings for thousands of stacks)—causes severe performance degradation due to iterative dynamic heap reallocations when growing.
+**Action:** When mapping, formatting, or grouping data into a newly owned collection, always use `.with_capacity()` to pre-allocate memory based on the known size of the input elements or a robust heuristic.

@@ -148,7 +148,7 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
             }
         }
 
-        let mut folded_data = String::new();
+        let mut folded_data = String::with_capacity(folded_stacks.len() * 128);
         for (stack, size) in folded_stacks {
             let _ = writeln!(folded_data, "{} {}", stack, size);
         }

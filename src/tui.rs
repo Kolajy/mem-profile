@@ -381,7 +381,7 @@ fn run_app<B: Backend>(
 
                 terminal.draw(|f| ui(f, &mut app_lock, &items))?;
             } else {
-                return Err(io::Error::new(io::ErrorKind::Other, "App mutex poisoned"));
+                return Err(io::Error::other("App mutex poisoned"));
             }
         }
 
@@ -394,9 +394,7 @@ fn run_app<B: Backend>(
                 Event::Key(key) => {
                     let mut app_lock = match app.lock() {
                         Ok(lock) => lock,
-                        Err(_) => {
-                            return Err(io::Error::new(io::ErrorKind::Other, "App mutex poisoned"))
-                        }
+                        Err(_) => return Err(io::Error::other("App mutex poisoned")),
                     };
                     match key.code {
                         KeyCode::Char('q') | KeyCode::Esc => {
@@ -450,9 +448,7 @@ fn run_app<B: Backend>(
                 Event::Mouse(mouse) => {
                     let mut app_lock = match app.lock() {
                         Ok(lock) => lock,
-                        Err(_) => {
-                            return Err(io::Error::new(io::ErrorKind::Other, "App mutex poisoned"))
-                        }
+                        Err(_) => return Err(io::Error::other("App mutex poisoned")),
                     };
                     match mouse.kind {
                         event::MouseEventKind::ScrollDown => app_lock.scroll_down(items.len()),
