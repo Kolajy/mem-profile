@@ -169,9 +169,10 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
         snap2 = parse_json_array(&file2_content);
     }
 
-    let mut net_differences = Vec::new();
-    let mut new_paths = Vec::new();
-    let mut freed_paths = Vec::new();
+    // ⚡ Bolt: Pre-allocate vectors using the maximum possible size to avoid expensive dynamic heap reallocations when processing large memory snapshots.
+    let mut net_differences = Vec::with_capacity(std::cmp::max(snap1.len(), snap2.len()));
+    let mut new_paths = Vec::with_capacity(snap2.len());
+    let mut freed_paths = Vec::with_capacity(snap1.len());
 
     for (stack, stats1) in &snap1 {
         if let Some(stats2) = snap2.get(*stack) {
