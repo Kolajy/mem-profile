@@ -1,3 +1,4 @@
+use num_format::{Locale, ToFormattedString};
 use std::collections::HashMap;
 use std::fs;
 
@@ -206,7 +207,10 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
             println!("  Stack: {}", stack);
             println!(
                 "    Size Diff: {}{} bytes, Count Diff: {}{}",
-                size_sign, size_diff, count_sign, count_diff
+                size_sign,
+                size_diff.unsigned_abs().to_formatted_string(&Locale::en),
+                count_sign,
+                count_diff.unsigned_abs().to_formatted_string(&Locale::en)
             );
         }
     }
@@ -219,7 +223,11 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
         new_paths.sort_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in new_paths {
             println!("  Stack: {}", stack);
-            println!("    Size: +{} bytes, Count: +{}", size, count);
+            println!(
+                "    Size: +{} bytes, Count: +{}",
+                size.to_formatted_string(&Locale::en),
+                count.to_formatted_string(&Locale::en)
+            );
         }
     }
     println!();
@@ -231,7 +239,11 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
         freed_paths.sort_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in freed_paths {
             println!("  Stack: {}", stack);
-            println!("    Size: -{} bytes, Count: -{}", size, count);
+            println!(
+                "    Size: -{} bytes, Count: -{}",
+                size.to_formatted_string(&Locale::en),
+                count.to_formatted_string(&Locale::en)
+            );
         }
     }
 }
