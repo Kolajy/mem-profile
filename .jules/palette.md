@@ -86,3 +86,7 @@
 ## 2024-11-20 - [TUI Flash Messages Truncation]
 **Learning:** In terminal user interfaces with strict width constraints (e.g., 80-column defaults), temporary flash messages (like success toasts) can easily be horizontally truncated if static lower-priority information (like permanent keybind hints) persistently occupies the space.
 **Action:** Conditionally hide lower-priority permanent information (like static keybind hints) when temporary flash messages are active to ensure the feedback is prominently visible without truncating.
+
+## 2024-08-05 - [TUI Scrollbars for Long Lists]
+**Learning:** In terminal user interfaces, users can get lost in long lists (like active allocations) if there is no visual indicator of the current scroll position relative to the total list length.
+**Action:** Always add a `Scrollbar` widget to scrollable components (like `Table` or `List`) to provide immediate context on scroll position and list length, improving spatial awareness and overall UX.
