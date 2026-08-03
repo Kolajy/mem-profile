@@ -110,7 +110,7 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
         }
 
         // Accumulate memory usage for identical stacks
-        let mut folded_stacks = HashMap::new();
+        let mut folded_stacks = HashMap::with_capacity(raw_leaks.len());
 
         for (frames, size) in raw_leaks {
             let symbols = symbolicate_frames(&frames);
@@ -171,7 +171,10 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
 
         // Write out the flamegraph SVG to a temporary file
         let file = options.open(&tmp_path)?;
-        let result = from_reader(&mut opts, &mut cursor, file).map_err(std::io::Error::other);
+        let mut buf_writer = std::io::BufWriter::new(file);
+        let result =
+            from_reader(&mut opts, &mut cursor, &mut buf_writer).map_err(std::io::Error::other);
+        drop(buf_writer); // Flush and close before rename
 
         if result.is_ok() {
             // Atomically rename to target path to avoid hardlink arbitrary file overwrite vulnerabilities
