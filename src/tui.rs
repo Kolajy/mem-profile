@@ -13,7 +13,10 @@ use ratatui::{
     style::{Color, Modifier, Style},
     symbols,
     text::{Line, Span},
-    widgets::{Axis, Block, Borders, Cell, Chart, Dataset, GraphType, Row, Table, TableState},
+    widgets::{
+        Axis, Block, Borders, Cell, Chart, Dataset, GraphType, Row, Scrollbar,
+        ScrollbarOrientation, ScrollbarState, Table, TableState,
+    },
     Frame, Terminal,
 };
 use std::{
@@ -891,6 +894,24 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
 
     f.render_stateful_widget(table, chunks[2], &mut app.table_state);
+
+    let mut scrollbar_state = ScrollbarState::default()
+        .content_length(items.len().saturating_sub(1))
+        .position(app.table_state.selected().unwrap_or(0));
+
+    let scrollbar = Scrollbar::default()
+        .orientation(ScrollbarOrientation::VerticalRight)
+        .begin_symbol(Some("▲"))
+        .end_symbol(Some("▼"));
+
+    f.render_stateful_widget(
+        scrollbar,
+        chunks[2].inner(&ratatui::layout::Margin {
+            vertical: 1,
+            horizontal: 0,
+        }),
+        &mut scrollbar_state,
+    );
 }
 
 fn format_bytes(v: f64) -> String {
