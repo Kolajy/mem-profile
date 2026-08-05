@@ -143,6 +143,15 @@ fn read_securely(path: &str) -> std::io::Result<String> {
     Ok(content)
 }
 
+fn format_signed_diff(diff: isize) -> String {
+    let sign = if diff >= 0 { "+" } else { "-" };
+    format!(
+        "{}{}",
+        sign,
+        diff.unsigned_abs().to_formatted_string(&Locale::en)
+    )
+}
+
 pub fn diff_snapshots(path1: &str, path2: &str) {
     let file1_content = match read_securely(path1) {
         Ok(c) => c,
@@ -202,15 +211,11 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     } else {
         net_differences.sort_by_key(|&(_, size_diff, _)| -size_diff.abs());
         for (stack, size_diff, count_diff) in net_differences {
-            let size_sign = if size_diff >= 0 { "+" } else { "" };
-            let count_sign = if count_diff >= 0 { "+" } else { "" };
             println!("  Stack: {}", stack);
             println!(
-                "    Size Diff: {}{} bytes, Count Diff: {}{}",
-                size_sign,
-                size_diff.unsigned_abs().to_formatted_string(&Locale::en),
-                count_sign,
-                count_diff.unsigned_abs().to_formatted_string(&Locale::en)
+                "    Size Diff: {} bytes, Count Diff: {}",
+                format_signed_diff(size_diff),
+                format_signed_diff(count_diff)
             );
         }
     }

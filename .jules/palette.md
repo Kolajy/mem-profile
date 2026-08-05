@@ -90,3 +90,7 @@
 ## 2024-08-05 - [TUI Scrollbars for Long Lists]
 **Learning:** In terminal user interfaces, users can get lost in long lists (like active allocations) if there is no visual indicator of the current scroll position relative to the total list length.
 **Action:** Always add a `Scrollbar` widget to scrollable components (like `Table` or `List`) to provide immediate context on scroll position and list length, improving spatial awareness and overall UX.
+
+## 2024-08-06 - [Signed Differences Formatting]
+**Learning:** When displaying difference values (e.g., memory deltas) in a CLI using `.unsigned_abs()` to enable thousands-separators, failing to explicitly handle the negative sign fallback correctly (e.g., setting it to `""` instead of `"-"`) causes negative differences to look like positive increases.
+**Action:** Always verify string sign prefixes for negative differences when stripping standard signs, or encapsulate the sign evaluation and formatting into a helper function to ensure consistent and correct representation.
