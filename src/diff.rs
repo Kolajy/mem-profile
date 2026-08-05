@@ -205,7 +205,10 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     println!("=== Heap Profile Snapshot Diff ===");
     println!();
 
-    println!("--- Net Differences (Changed Paths) ---");
+    println!(
+        "--- Net Differences (Changed Paths: {}) ---",
+        net_differences.len().to_formatted_string(&Locale::en)
+    );
     if net_differences.is_empty() {
         println!("  None");
     } else {
@@ -221,7 +224,10 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     }
     println!();
 
-    println!("--- Newly Introduced Allocation Paths ---");
+    println!(
+        "--- Newly Introduced Allocation Paths ({}) ---",
+        new_paths.len().to_formatted_string(&Locale::en)
+    );
     if new_paths.is_empty() {
         println!("  None");
     } else {
@@ -237,7 +243,10 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     }
     println!();
 
-    println!("--- Freed Allocation Paths ---");
+    println!(
+        "--- Freed Allocation Paths ({}) ---",
+        freed_paths.len().to_formatted_string(&Locale::en)
+    );
     if freed_paths.is_empty() {
         println!("  None");
     } else {
