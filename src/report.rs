@@ -40,7 +40,7 @@ pub fn print_leak_report() {
             eprintln!("\n========================================================================");
             eprintln!("                      mem-profile: Memory Leak Report");
             eprintln!("========================================================================");
-            eprintln!("No memory leaks detected!");
+            eprintln!("\x1b[32m✓ Zero leaks detected. No active allocations.\x1b[0m");
             eprintln!("========================================================================\n");
             in_alloc.set(was_in);
             return;
