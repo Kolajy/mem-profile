@@ -94,3 +94,7 @@
 ## 2024-08-06 - [Signed Differences Formatting]
 **Learning:** When displaying difference values (e.g., memory deltas) in a CLI using `.unsigned_abs()` to enable thousands-separators, failing to explicitly handle the negative sign fallback correctly (e.g., setting it to `""` instead of `"-"`) causes negative differences to look like positive increases.
 **Action:** Always verify string sign prefixes for negative differences when stripping standard signs, or encapsulate the sign evaluation and formatting into a helper function to ensure consistent and correct representation.
+
+## 2024-08-07 - Explicit Success Messaging in CLI
+**Learning:** Generic and ambiguous empty states (like "  None") in CLI outputs leave users uncertain whether an operation succeeded or just failed to generate data, violating UX guidelines established in TUI interfaces.
+**Action:** Always replace generic empty state placeholders with explicitly styled success messages (e.g., using ANSI color codes and explicit wording like "✓ Zero net differences detected") to maintain a consistent, positive user experience across all interfaces.

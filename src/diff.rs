@@ -210,7 +210,7 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
         net_differences.len().to_formatted_string(&Locale::en)
     );
     if net_differences.is_empty() {
-        println!("  None");
+        println!("  \x1b[32m✓ Zero net differences detected.\x1b[0m");
     } else {
         net_differences.sort_by_key(|&(_, size_diff, _)| -size_diff.abs());
         for (stack, size_diff, count_diff) in net_differences {
@@ -229,7 +229,7 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
         new_paths.len().to_formatted_string(&Locale::en)
     );
     if new_paths.is_empty() {
-        println!("  None");
+        println!("  \x1b[32m✓ Zero new allocation paths introduced.\x1b[0m");
     } else {
         new_paths.sort_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in new_paths {
@@ -248,7 +248,7 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
         freed_paths.len().to_formatted_string(&Locale::en)
     );
     if freed_paths.is_empty() {
-        println!("  None");
+        println!("  \x1b[32m✓ Zero freed allocation paths.\x1b[0m");
     } else {
         freed_paths.sort_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in freed_paths {
