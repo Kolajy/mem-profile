@@ -1,3 +1,4 @@
+use num_format::{Locale, ToFormattedString};
 use std::env;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
@@ -40,15 +41,32 @@ fn get_rss(statm_path: &str, page_size: u64, statm_file: &mut Option<File>) -> O
     None
 }
 
+fn format_float_with_commas(val: f64) -> String {
+    let int_part = val.trunc() as u64;
+    let frac_part = (val.fract() * 10.0).round() as u64;
+    if frac_part == 10 {
+        format!("{}.0", (int_part + 1).to_formatted_string(&Locale::en))
+    } else {
+        format!(
+            "{}.{}",
+            int_part.to_formatted_string(&Locale::en),
+            frac_part
+        )
+    }
+}
+
 fn format_bytes(v: f64) -> String {
     if v < 1024.0 {
-        format!("{} B", v as u64)
+        format!("{} B", (v as u64).to_formatted_string(&Locale::en))
     } else if v < 1024.0 * 1024.0 {
-        format!("{:.1} KB", v / 1024.0)
+        format!("{} KB", format_float_with_commas(v / 1024.0))
     } else if v < 1024.0 * 1024.0 * 1024.0 {
-        format!("{:.1} MB", v / (1024.0 * 1024.0))
+        format!("{} MB", format_float_with_commas(v / (1024.0 * 1024.0)))
     } else {
-        format!("{:.1} GB", v / (1024.0 * 1024.0 * 1024.0))
+        format!(
+            "{} GB",
+            format_float_with_commas(v / (1024.0 * 1024.0 * 1024.0))
+        )
     }
 }
 
@@ -234,17 +252,17 @@ mod tests {
         // Bytes
         assert_eq!(format_bytes(0.0), "0 B");
         assert_eq!(format_bytes(512.0), "512 B");
-        assert_eq!(format_bytes(1023.0), "1023 B");
+        assert_eq!(format_bytes(1023.0), "1,023 B");
 
         // Kilobytes
         assert_eq!(format_bytes(1024.0), "1.0 KB");
         assert_eq!(format_bytes(1536.0), "1.5 KB");
-        assert_eq!(format_bytes(1024.0 * 1024.0 - 1.0), "1024.0 KB");
+        assert_eq!(format_bytes(1024.0 * 1024.0 - 1.0), "1,024.0 KB");
 
         // Megabytes
         assert_eq!(format_bytes(1024.0 * 1024.0), "1.0 MB");
         assert_eq!(format_bytes(1.5 * 1024.0 * 1024.0), "1.5 MB");
-        assert_eq!(format_bytes(1024.0 * 1024.0 * 1024.0 - 1.0), "1024.0 MB");
+        assert_eq!(format_bytes(1024.0 * 1024.0 * 1024.0 - 1.0), "1,024.0 MB");
 
         // Gigabytes
         assert_eq!(format_bytes(1024.0 * 1024.0 * 1024.0), "1.0 GB");
