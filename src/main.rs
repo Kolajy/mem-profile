@@ -54,7 +54,7 @@ fn format_bytes(v: f64) -> String {
 
 fn draw_graph(data: &[f64], total_duration: f64) {
     if data.is_empty() {
-        println!("\nNo memory data collected (process ran too fast).");
+        println!("\n\x1b[33mi No memory data collected (process ran too fast).\x1b[0m");
         return;
     }
 
