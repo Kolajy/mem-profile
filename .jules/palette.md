@@ -98,3 +98,6 @@
 ## 2024-08-07 - Explicit Success Messaging in CLI
 **Learning:** Generic and ambiguous empty states (like "  None") in CLI outputs leave users uncertain whether an operation succeeded or just failed to generate data, violating UX guidelines established in TUI interfaces.
 **Action:** Always replace generic empty state placeholders with explicitly styled success messages (e.g., using ANSI color codes and explicit wording like "✓ Zero net differences detected") to maintain a consistent, positive user experience across all interfaces.
+## 2024-11-23 - [Float Formatting with Thousands Separators]
+**Learning:** When formatting floats with thousands separators using the `num-format` crate (which only supports integers), manually splitting the float into integer and fractional parts requires explicitly handling the edge case where the fraction rounds up to the base (e.g., 10 for 1 decimal place). Failing to do so causes "1,023.10" instead of "1,024.0", failing tests.
+**Action:** Always handle the rounding rollover condition by incrementing the integer part and resetting the fraction to 0 (e.g., `if frac_part == 10`).

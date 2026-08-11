@@ -914,14 +914,31 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     );
 }
 
+fn format_float_with_commas(val: f64) -> String {
+    let int_part = val.trunc() as u64;
+    let frac_part = (val.fract() * 10.0).round() as u64;
+    if frac_part == 10 {
+        format!("{}.0", (int_part + 1).to_formatted_string(&Locale::en))
+    } else {
+        format!(
+            "{}.{}",
+            int_part.to_formatted_string(&Locale::en),
+            frac_part
+        )
+    }
+}
+
 fn format_bytes(v: f64) -> String {
     if v < 1024.0 {
-        format!("{} B", v as u64)
+        format!("{} B", (v as u64).to_formatted_string(&Locale::en))
     } else if v < 1024.0 * 1024.0 {
-        format!("{:.1} KB", v / 1024.0)
+        format!("{} KB", format_float_with_commas(v / 1024.0))
     } else if v < 1024.0 * 1024.0 * 1024.0 {
-        format!("{:.1} MB", v / (1024.0 * 1024.0))
+        format!("{} MB", format_float_with_commas(v / (1024.0 * 1024.0)))
     } else {
-        format!("{:.1} GB", v / (1024.0 * 1024.0 * 1024.0))
+        format!(
+            "{} GB",
+            format_float_with_commas(v / (1024.0 * 1024.0 * 1024.0))
+        )
     }
 }
