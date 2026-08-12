@@ -29,9 +29,13 @@ pub fn export_folded_stacks() -> String {
             }
         }
 
+        // Bolt: Hoist the string buffer outside the loop to avoid O(N) heap allocations per frame.
+        // Impact: Significant reduction in heap churn and allocator overhead during stack folding.
+        let mut stack_str = String::with_capacity(128);
+
         for (backtrace, total_size) in raw_stacks {
             let symbols = symbolicate_frames(&backtrace);
-            let mut stack_str = String::with_capacity(128);
+            stack_str.clear();
 
             // If we have no symbols (e.g. backtrace feature disabled),
             // we'll just group everything under an unknown root.
@@ -70,7 +74,14 @@ pub fn export_folded_stacks() -> String {
                 stack_str.push_str("<unknown>");
             }
 
-            *stacks.entry(stack_str).or_insert(0) += total_size;
+            // Bolt: Replace `entry().or_insert()` with `get_mut()` and explicit `insert()`
+            // to avoid taking ownership of `stack_str` and forcing an allocation on every iteration.
+            // A new allocation via `.clone()` is only performed when a unique stack trace is encountered.
+            if let Some(total) = stacks.get_mut(stack_str.as_str()) {
+                *total += total_size;
+            } else {
+                stacks.insert(stack_str.clone(), total_size);
+            }
         }
 
         in_alloc.set(was_in);
