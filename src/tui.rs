@@ -651,7 +651,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
             Span::raw("e-sort, "),
             Span::styled("[q]", key_style),
             Span::raw("uit, "),
-            Span::styled("[↑/↓/j/k/Pg]", key_style),
+            Span::styled("[↑/↓/j/k/Pg/Home/End]", key_style),
             Span::raw(" nav "),
         ]);
     }
