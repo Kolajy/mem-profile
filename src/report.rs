@@ -111,6 +111,9 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
 
         // Accumulate memory usage for identical stacks
         let mut folded_stacks = HashMap::with_capacity(raw_leaks.len());
+        // Bolt: Hoist the string buffer outside the loop to avoid O(N) heap allocations per frame.
+        // Impact: Significant reduction in heap churn and allocator overhead during stack folding.
+        let mut stack_str = String::with_capacity(128);
 
         for (frames, size) in raw_leaks {
             let symbols = symbolicate_frames(&frames);
@@ -118,7 +121,7 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
                 continue;
             }
 
-            let mut stack_str = String::with_capacity(128);
+            stack_str.clear();
             let mut first = true;
             // We want entry points at the root, so reverse the stack
             for sym in symbols.iter().rev() {
@@ -144,7 +147,14 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
             }
 
             if !stack_str.is_empty() {
-                *folded_stacks.entry(stack_str).or_insert(0) += size;
+                // Bolt: Replace `entry().or_insert()` with `get_mut()` and explicit `insert()`
+                // to avoid taking ownership of `stack_str` and forcing an allocation on every iteration.
+                // A new allocation via `.clone()` is only performed when a unique stack trace is encountered.
+                if let Some(total) = folded_stacks.get_mut(stack_str.as_str()) {
+                    *total += size;
+                } else {
+                    folded_stacks.insert(stack_str.clone(), size);
+                }
             }
         }
 
