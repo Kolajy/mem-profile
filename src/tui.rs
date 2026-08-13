@@ -369,7 +369,7 @@ fn run_app<B: Backend>(
     // Bolt: Hoist these temporary collections out of the render loop to prevent continuous heap allocation on every tick.
     let mut raw_allocs_cache: HashMap<Vec<*mut std::ffi::c_void>, (usize, usize)> = HashMap::new();
     let mut folded_cache: HashMap<Arc<String>, (usize, usize)> = HashMap::new();
-    let mut items: Vec<(Arc<String>, usize, usize)> = Vec::new();
+    let mut items: Vec<(Arc<String>, usize, usize)> = Vec::with_capacity(128);
 
     loop {
         {

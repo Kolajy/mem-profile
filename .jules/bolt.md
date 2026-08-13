@@ -93,3 +93,6 @@
 ## 2026-08-01 - Pre-allocate Diff Collections
 **Learning:** During large memory snapshot diffing, appending thousands of elements to uninitialized collections (`Vec::new()`) triggers massive dynamic heap reallocations and slows down processing.
 **Action:** Always pre-allocate output collections (e.g. `Vec::with_capacity(size)`) using the known lengths of input data sets (or their maximum) to completely avoid intermediate heap resizing during the operation.
+## 2024-05-19 - Pre-allocate Collections to Prevent Reallocations
+**Learning:** Initializing `Vec` or `String` buffers using `::new()` inside hot paths for large data mapping—like `symbolicate_frames` (which creates a `Vec` for every captured backtrace) or profiling dumps (which construct strings for thousands of stacks)—causes severe performance degradation due to iterative dynamic heap reallocations when growing.
+**Action:** When mapping, formatting, or grouping data into a newly owned collection, always use `.with_capacity()` to pre-allocate memory based on the known size of the input elements or a robust heuristic.

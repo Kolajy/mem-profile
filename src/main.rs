@@ -79,7 +79,7 @@ fn draw_graph(data: &[f64], total_duration: f64) {
     let height = 15;
     let width = 60;
 
-    let mut display_data = Vec::new();
+    let mut display_data = Vec::with_capacity(std::cmp::min(data.len(), width));
     if data.len() > width {
         let chunk_size = data.len() as f64 / width as f64;
         for i in 0..width {
@@ -176,7 +176,7 @@ fn main() {
     let statm_path = format!("/proc/{}/statm", pid);
 
     let is_running = Arc::new(AtomicBool::new(true));
-    let rss_data = Arc::new(Mutex::new(Vec::new()));
+    let rss_data = Arc::new(Mutex::new(Vec::with_capacity(8192)));
 
     let is_running_clone = is_running.clone();
     let rss_data_clone = rss_data.clone();
