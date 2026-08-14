@@ -369,7 +369,7 @@ fn run_app<B: Backend>(
     // Bolt: Hoist these temporary collections out of the render loop to prevent continuous heap allocation on every tick.
     let mut raw_allocs_cache: HashMap<Vec<*mut std::ffi::c_void>, (usize, usize)> = HashMap::new();
     let mut folded_cache: HashMap<Arc<String>, (usize, usize)> = HashMap::new();
-    let mut items: Vec<(Arc<String>, usize, usize)> = Vec::with_capacity(128);
+    let mut items: Vec<(Arc<String>, usize, usize, String, String)> = Vec::with_capacity(128);
 
     loop {
         {
@@ -475,7 +475,7 @@ fn get_active_allocations(
     symbol_cache: &mut HashMap<FramePtrs, Arc<String>>,
     raw_allocs: &mut HashMap<Vec<*mut std::ffi::c_void>, (usize, usize)>,
     folded: &mut HashMap<Arc<String>, (usize, usize)>,
-    result: &mut Vec<(Arc<String>, usize, usize)>,
+    result: &mut Vec<(Arc<String>, usize, usize, String, String)>,
 ) {
     crate::allocator::IN_ALLOCATOR.with(|in_alloc| {
         let was_in = in_alloc.get();
@@ -483,7 +483,6 @@ fn get_active_allocations(
 
         raw_allocs.clear();
         folded.clear();
-        result.clear();
 
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
@@ -550,7 +549,31 @@ fn get_active_allocations(
             }
         }
 
-        result.extend(folded.iter().map(|(k, v)| (Arc::clone(k), v.0, v.1)));
+        use std::fmt::Write;
+        let mut i = 0;
+        for (k, v) in folded.iter() {
+            if i < result.len() {
+                result[i].0 = Arc::clone(k);
+                result[i].1 = v.0;
+                result[i].2 = v.1;
+                result[i].3.clear();
+                let _ = write_bytes(&mut result[i].3, v.0 as f64);
+                result[i].4.clear();
+                let mut buf = num_format::Buffer::default();
+                buf.write_formatted(&v.1, &num_format::Locale::en);
+                let _ = write!(result[i].4, "{}", buf.as_str());
+            } else {
+                let mut size_str = String::with_capacity(32);
+                let _ = write_bytes(&mut size_str, v.0 as f64);
+                let mut count_str = String::with_capacity(32);
+                let mut buf = num_format::Buffer::default();
+                buf.write_formatted(&v.1, &num_format::Locale::en);
+                let _ = write!(count_str, "{}", buf.as_str());
+                result.push((Arc::clone(k), v.0, v.1, size_str, count_str));
+            }
+            i += 1;
+        }
+        result.truncate(i);
 
         if sort_by_size {
             result.sort_by(|a, b| b.1.cmp(&a.1));
@@ -562,7 +585,7 @@ fn get_active_allocations(
     })
 }
 
-fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
+fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String, String)]) {
     if items.is_empty() {
         app.table_state.select(None);
     } else {
@@ -838,17 +861,17 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     } else {
         items
             .iter()
-            .map(|(trace, size, count)| {
+            .map(|(trace, _size, _count, size_str, count_str)| {
                 // Bolt: Zero-allocation optimization: Use array instead of vec! to prevent `O(N)` heap allocations per table row every render frame.
                 let cells = [
                     // Zero-allocation: use as_str() instead of trace.clone() to prevent string allocation per table row every frame.
                     Cell::from(trace.as_str()),
                     Cell::from(
-                        ratatui::text::Line::from(format_bytes(*size as f64))
+                        ratatui::text::Line::from(size_str.as_str())
                             .alignment(ratatui::layout::Alignment::Right),
                     ),
                     Cell::from(
-                        ratatui::text::Line::from(count.to_formatted_string(&Locale::en))
+                        ratatui::text::Line::from(count_str.as_str())
                             .alignment(ratatui::layout::Alignment::Right),
                     ),
                 ];
@@ -914,31 +937,38 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize)]) {
     );
 }
 
-fn format_float_with_commas(val: f64) -> String {
+fn write_float_with_commas(w: &mut impl std::fmt::Write, val: f64) -> std::fmt::Result {
     let int_part = val.trunc() as u64;
     let frac_part = (val.fract() * 10.0).round() as u64;
+    let mut buf = num_format::Buffer::default();
     if frac_part == 10 {
-        format!("{}.0", (int_part + 1).to_formatted_string(&Locale::en))
+        buf.write_formatted(&(int_part + 1), &Locale::en);
+        write!(w, "{}.0", buf.as_str())
     } else {
-        format!(
-            "{}.{}",
-            int_part.to_formatted_string(&Locale::en),
-            frac_part
-        )
+        buf.write_formatted(&int_part, &Locale::en);
+        write!(w, "{}.{}", buf.as_str(), frac_part)
+    }
+}
+
+pub(crate) fn write_bytes(w: &mut impl std::fmt::Write, v: f64) -> std::fmt::Result {
+    if v < 1024.0 {
+        let mut buf = num_format::Buffer::default();
+        buf.write_formatted(&(v as u64), &Locale::en);
+        write!(w, "{} B", buf.as_str())
+    } else if v < 1024.0 * 1024.0 {
+        write_float_with_commas(w, v / 1024.0)?;
+        write!(w, " KB")
+    } else if v < 1024.0 * 1024.0 * 1024.0 {
+        write_float_with_commas(w, v / (1024.0 * 1024.0))?;
+        write!(w, " MB")
+    } else {
+        write_float_with_commas(w, v / (1024.0 * 1024.0 * 1024.0))?;
+        write!(w, " GB")
     }
 }
 
 fn format_bytes(v: f64) -> String {
-    if v < 1024.0 {
-        format!("{} B", (v as u64).to_formatted_string(&Locale::en))
-    } else if v < 1024.0 * 1024.0 {
-        format!("{} KB", format_float_with_commas(v / 1024.0))
-    } else if v < 1024.0 * 1024.0 * 1024.0 {
-        format!("{} MB", format_float_with_commas(v / (1024.0 * 1024.0)))
-    } else {
-        format!(
-            "{} GB",
-            format_float_with_commas(v / (1024.0 * 1024.0 * 1024.0))
-        )
-    }
+    let mut s = String::new();
+    let _ = write_bytes(&mut s, v);
+    s
 }

@@ -96,3 +96,7 @@
 ## 2024-05-19 - Pre-allocate Collections to Prevent Reallocations
 **Learning:** Initializing `Vec` or `String` buffers using `::new()` inside hot paths for large data mapping—like `symbolicate_frames` (which creates a `Vec` for every captured backtrace) or profiling dumps (which construct strings for thousands of stacks)—causes severe performance degradation due to iterative dynamic heap reallocations when growing.
 **Action:** When mapping, formatting, or grouping data into a newly owned collection, always use `.with_capacity()` to pre-allocate memory based on the known size of the input elements or a robust heuristic.
+
+## 2024-11-23 - Zero-Allocation TUI Render Formatting
+**Learning:** Calling functions that return newly allocated `String`s (like `format!()` wrappers or `to_formatted_string`) inside a `ratatui` table row generation loop causes massive `O(N)` heap allocations on every render tick (e.g., 4 times a second). This degrades performance and puts heavy pressure on the memory allocator.
+**Action:** To eliminate continuous heap allocations in high-frequency TUI render loops, avoid functions that return newly allocated `String`s (like `format!()` wrappers) for per-row data. Instead, implement zero-allocation formatters that accept a `&mut impl std::fmt::Write`, cache pre-allocated `String` buffers within the state vector (e.g., using a tuple or struct), and overwrite them in-place using `.clear()` and the `write!` macro.
