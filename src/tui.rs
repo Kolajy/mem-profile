@@ -732,9 +732,15 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             .borders(Borders::ALL)
             .border_style(border_style);
         let msg = if app.process_exited {
-            "No memory data collected."
+            "No memory data collected.".to_string()
         } else {
-            "Waiting for initial memory reading..."
+            let spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+            let t = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis();
+            let idx = (t / 100) as usize % spinner.len();
+            format!("{} Waiting for initial memory reading...", spinner[idx])
         };
         let info = ratatui::widgets::Paragraph::new(msg)
             .block(block)
@@ -848,12 +854,21 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     let rows: Vec<Row> = if items.is_empty() {
         let (msg, style) = if app.process_exited {
             (
-                "✓ Zero leaks detected. No active allocations.",
+                "✓ Zero leaks detected. No active allocations.".to_string(),
                 Style::default().fg(Color::Green),
             )
         } else {
+            let spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+            let t = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis();
+            let idx = (t / 100) as usize % spinner.len();
             (
-                "No allocations tracked. Waiting for data...",
+                format!(
+                    "{} No allocations tracked. Waiting for data...",
+                    spinner[idx]
+                ),
                 Style::default().fg(Color::Gray),
             )
         };

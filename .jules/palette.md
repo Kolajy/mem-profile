@@ -101,3 +101,7 @@
 ## 2024-11-23 - [Float Formatting with Thousands Separators]
 **Learning:** When formatting floats with thousands separators using the `num-format` crate (which only supports integers), manually splitting the float into integer and fractional parts requires explicitly handling the edge case where the fraction rounds up to the base (e.g., 10 for 1 decimal place). Failing to do so causes "1,023.10" instead of "1,024.0", failing tests.
 **Action:** Always handle the rounding rollover condition by incrementing the integer part and resetting the fraction to 0 (e.g., `if frac_part == 10`).
+
+## 2024-11-25 - [TUI Async Loading Spinners]
+**Learning:** When TUI applications wait for data streams to initialize, static empty state messages (like "Waiting for data...") can make the UI feel frozen or unresponsive, reducing user confidence.
+**Action:** Always include a dynamic visual indicator (e.g., a time-based animated spinner like ⠋⠙⠹) in async empty states to reassure users the application is actively running and polling.
