@@ -522,7 +522,7 @@ fn get_active_allocations(
                 let symbols = symbolicate_frames(&frame_ptrs.0);
                 let mut s_buf = String::with_capacity(128);
                 let mut first = true;
-                for sym in symbols.iter() {
+                for sym in symbols.iter().rev() {
                     let name = sym.name.as_deref().unwrap_or("<unknown>");
                     if name.contains("mem_profile::") || name.contains("backtrace::") {
                         continue;
