@@ -52,3 +52,7 @@
 **Vulnerability:** When a thread panics while holding a Mutex lock, the Mutex becomes poisoned. If another thread tries to acquire the poisoned lock using `.lock().unwrap()`, it will also panic, potentially crashing the entire application (DoS).
 **Learning:** Mutex locks should be acquired safely using `.lock()` or `if let Ok(guard) = ...` instead of `.unwrap()`, especially in cleanup or teardown routines, to prevent cascading failures.
 **Prevention:** Avoid `.unwrap()` on `.lock()` calls. Use `if let Ok(guard) = ...` to handle poisoned locks gracefully, allowing the application to continue or exit safely.
+## 2024-08-17 - [Graceful Handling of SystemTime Comparisons]
+**Vulnerability:** Calculating time differences using `SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap()` can cause the application to panic if the system time is somehow earlier than the Unix Epoch. This exposes the application to Denial of Service (DoS) attacks due to clock manipulation or skewed clocks.
+**Learning:** `SystemTime` comparisons are not infallible and should not be forcibly unwrapped.
+**Prevention:** Use `.unwrap_or_default()` or proper error handling when performing time duration calculations to prevent panics and ensure application stability.
