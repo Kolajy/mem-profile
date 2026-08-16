@@ -896,16 +896,23 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     };
 
     let sort_label = if app.sort_by_size { "Size" } else { "Count" };
+    let base_title = if app.process_exited {
+        "Unfreed Memory Leaks"
+    } else {
+        "Active Allocations"
+    };
     let title_text = if let Some(selected) = app.table_state.selected() {
         format!(
-            "Active Allocations ({} of {} items - Sorted by {})",
+            "{} ({} of {} items - Sorted by {})",
+            base_title,
             (selected + 1).to_formatted_string(&Locale::en),
             items.len().to_formatted_string(&Locale::en),
             sort_label
         )
     } else {
         format!(
-            "Active Allocations ({} items - Sorted by {})",
+            "{} ({} items - Sorted by {})",
+            base_title,
             items.len().to_formatted_string(&Locale::en),
             sort_label
         )
@@ -933,23 +940,25 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
 
     f.render_stateful_widget(table, chunks[2], &mut app.table_state);
 
-    let mut scrollbar_state = ScrollbarState::default()
-        .content_length(items.len().saturating_sub(1))
-        .position(app.table_state.selected().unwrap_or(0));
+    if items.len() > chunks[2].height.saturating_sub(4) as usize {
+        let mut scrollbar_state = ScrollbarState::default()
+            .content_length(items.len().saturating_sub(1))
+            .position(app.table_state.selected().unwrap_or(0));
 
-    let scrollbar = Scrollbar::default()
-        .orientation(ScrollbarOrientation::VerticalRight)
-        .begin_symbol(Some("▲"))
-        .end_symbol(Some("▼"));
+        let scrollbar = Scrollbar::default()
+            .orientation(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(Some("▲"))
+            .end_symbol(Some("▼"));
 
-    f.render_stateful_widget(
-        scrollbar,
-        chunks[2].inner(&ratatui::layout::Margin {
-            vertical: 1,
-            horizontal: 0,
-        }),
-        &mut scrollbar_state,
-    );
+        f.render_stateful_widget(
+            scrollbar,
+            chunks[2].inner(&ratatui::layout::Margin {
+                vertical: 1,
+                horizontal: 0,
+            }),
+            &mut scrollbar_state,
+        );
+    }
 }
 
 fn write_float_with_commas(w: &mut impl std::fmt::Write, val: f64) -> std::fmt::Result {

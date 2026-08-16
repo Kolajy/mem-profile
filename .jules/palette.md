@@ -105,3 +105,6 @@
 ## 2024-11-25 - [TUI Async Loading Spinners]
 **Learning:** When TUI applications wait for data streams to initialize, static empty state messages (like "Waiting for data...") can make the UI feel frozen or unresponsive, reducing user confidence.
 **Action:** Always include a dynamic visual indicator (e.g., a time-based animated spinner like ⠋⠙⠹) in async empty states to reassure users the application is actively running and polling.
+## 2026-08-16 - [TUI Conditional Scrollbars]
+**Learning:** Rendering scrollbars when all content is already visible within the viewport creates visual noise and suggests non-existent off-screen content, leading to user confusion.
+**Action:** Conditionally hide scrollbars in TUI applications when the total item count is less than or equal to the visible viewport capacity.
