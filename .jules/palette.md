@@ -108,3 +108,6 @@
 ## 2026-08-16 - [TUI Conditional Scrollbars]
 **Learning:** Rendering scrollbars when all content is already visible within the viewport creates visual noise and suggests non-existent off-screen content, leading to user confusion.
 **Action:** Conditionally hide scrollbars in TUI applications when the total item count is less than or equal to the visible viewport capacity.
+## 2024-05-24 - Sort diagnostic reports by impact
+**Learning:** Developers reading terminal-based memory leak reports face cognitive overload if the output is presented in arbitrary hash map order. The most critical information (the largest memory leaks) can easily be buried at the top or bottom of a long scrollback buffer.
+**Action:** When designing CLI tools that output diagnostic data, always collect and sort unordered datasets (like HashMaps) by severity or impact size (e.g., descending order by memory consumed) before presenting them to the user to maximize scannability and highlight actionable priorities first.
