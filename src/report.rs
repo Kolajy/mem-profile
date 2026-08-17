@@ -55,7 +55,10 @@ pub fn print_leak_report() {
             total_bytes.to_formatted_string(&Locale::en)
         );
 
-        for (i, (frames, size)) in raw_leaks.iter().enumerate() {
+        let mut sorted_leaks: Vec<_> = raw_leaks.iter().collect();
+        sorted_leaks.sort_by_key(|&(_, &size)| std::cmp::Reverse(size));
+
+        for (i, (frames, size)) in sorted_leaks.into_iter().enumerate() {
             eprintln!(
                 "Leak Stack {}: {} bytes",
                 (i + 1).to_formatted_string(&Locale::en),
