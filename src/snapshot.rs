@@ -112,7 +112,10 @@ pub fn dump_to_file(path: &Path) {
     );
 
     // Bolt: Grouping allocations by unique backtraces avoids O(N) backtrace cloning and implicitly avoids expensive repeated symbolication.
-    for (i, (frames, (size, count))) in grouped_allocations.iter().enumerate() {
+    let mut sorted_allocations: Vec<_> = grouped_allocations.into_iter().collect();
+    sorted_allocations.sort_by_key(|&(_, (size, _))| std::cmp::Reverse(size));
+
+    for (i, (frames, (size, count))) in sorted_allocations.into_iter().enumerate() {
         let _ = writeln!(
             buf_writer,
             "\nAllocation Group {}: {} bytes ({} allocations)",
@@ -121,7 +124,7 @@ pub fn dump_to_file(path: &Path) {
             count.to_formatted_string(&Locale::en)
         );
 
-        let symbols = symbolicate_frames(frames);
+        let symbols = symbolicate_frames(&frames);
         if symbols.is_empty() {
             let _ = writeln!(buf_writer, "  <no backtrace captured>");
         } else {
