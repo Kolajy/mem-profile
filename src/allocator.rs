@@ -10,10 +10,12 @@ thread_local! {
     // Const initialization ensures no dynamic allocation on first access.
     pub(crate) static IN_ALLOCATOR: Cell<bool> = const { Cell::new(false) };
 }
+// Bolt: We removed the `timestamp` field from `AllocationMetadata` as it was
+// not actively used in metrics. This avoids a costly `Instant::now()` syscall on every single allocation.
 
 pub struct AllocationMetadata {
     pub size: usize,
-    pub timestamp: Instant,
+
     pub backtrace: Vec<*mut std::ffi::c_void>,
 }
 
@@ -70,14 +72,7 @@ impl Registry {
         let shard_idx = get_shard_idx(ptr);
         let shards = self.get_shards();
         if let Ok(mut shard) = shards[shard_idx].lock() {
-            shard.insert(
-                ptr,
-                AllocationMetadata {
-                    size,
-                    timestamp: Instant::now(),
-                    backtrace,
-                },
-            );
+            shard.insert(ptr, AllocationMetadata { size, backtrace });
         }
     }
 
