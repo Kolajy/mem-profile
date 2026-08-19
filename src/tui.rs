@@ -813,13 +813,13 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     // Table
     let (size_header, size_style) = if app.sort_by_size {
         (
-            "Size ▼",
+            "Size  ▼",
             Style::default()
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),
         )
     } else {
-        ("Size  ", Style::default().fg(Color::Yellow))
+        ("Size   ", Style::default().fg(Color::Yellow))
     };
 
     let (count_header, count_style) = if !app.sort_by_size {
