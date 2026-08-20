@@ -248,7 +248,7 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
         freed_paths.len().to_formatted_string(&Locale::en)
     );
     if freed_paths.is_empty() {
-        println!("  \x1b[32m✓ Zero freed allocation paths.\x1b[0m");
+        println!("  \x1b[90m- Zero freed allocation paths.\x1b[0m");
     } else {
         freed_paths.sort_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in freed_paths {
