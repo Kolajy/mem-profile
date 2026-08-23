@@ -684,7 +684,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     let title_block = Block::default()
         .borders(Borders::ALL)
         .border_style(border_style)
-        .title(title);
+        .title(title)
+        .title_bottom(Line::from(key_spans.clone()).alignment(ratatui::layout::Alignment::Right));
 
     let current_rss = if let Some(last) = app.rss_history.back() {
         format_bytes(last.1)
