@@ -851,50 +851,6 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
         .height(1)
         .bottom_margin(1);
 
-    let rows: Vec<Row> = if items.is_empty() {
-        let (msg, style) = if app.process_exited {
-            (
-                "✓ Zero leaks detected. No active allocations.".to_string(),
-                Style::default().fg(Color::Green),
-            )
-        } else {
-            let spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-            let t = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis();
-            let idx = (t / 100) as usize % spinner.len();
-            (
-                format!(
-                    "{} No allocations tracked. Waiting for data...",
-                    spinner[idx]
-                ),
-                Style::default().fg(Color::Gray),
-            )
-        };
-        vec![Row::new([Cell::from(msg)]).style(style).height(1)]
-    } else {
-        items
-            .iter()
-            .map(|(trace, _size, _count, size_str, count_str)| {
-                // Bolt: Zero-allocation optimization: Use array instead of vec! to prevent `O(N)` heap allocations per table row every render frame.
-                let cells = [
-                    // Zero-allocation: use as_str() instead of trace.clone() to prevent string allocation per table row every frame.
-                    Cell::from(trace.as_str()),
-                    Cell::from(
-                        ratatui::text::Line::from(size_str.as_str())
-                            .alignment(ratatui::layout::Alignment::Right),
-                    ),
-                    Cell::from(
-                        ratatui::text::Line::from(count_str.as_str())
-                            .alignment(ratatui::layout::Alignment::Right),
-                    ),
-                ];
-                Row::new(cells).height(1)
-            })
-            .collect()
-    };
-
     let sort_label = if app.sort_by_size { "Size" } else { "Count" };
     let base_title = if app.process_exited {
         "Unfreed Memory Leaks"
@@ -918,27 +874,76 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
         )
     };
 
-    let table = Table::new(
-        rows,
-        [
-            Constraint::Percentage(70),
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
-        ],
-    )
-    .header(header)
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(border_style)
-            .title(title_text)
-            .title_bottom(Line::from(key_spans).alignment(ratatui::layout::Alignment::Right)),
-    )
-    .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-    .highlight_symbol(">> ")
-    .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
+    let table_block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(border_style)
+        .title(title_text)
+        .title_bottom(Line::from(key_spans).alignment(ratatui::layout::Alignment::Right));
 
-    f.render_stateful_widget(table, chunks[2], &mut app.table_state);
+    let widths = [
+        Constraint::Percentage(70),
+        Constraint::Percentage(15),
+        Constraint::Percentage(15),
+    ];
+
+    if items.is_empty() {
+        let (msg, style) = if app.process_exited {
+            (
+                "✓ Zero leaks detected. No active allocations.".to_string(),
+                Style::default().fg(Color::Green),
+            )
+        } else {
+            let spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+            let t = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis();
+            let idx = (t / 100) as usize % spinner.len();
+            (
+                format!(
+                    "{} No allocations tracked. Waiting for data...",
+                    spinner[idx]
+                ),
+                Style::default().fg(Color::Gray),
+            )
+        };
+        let empty_row = Row::new([Cell::from(msg)]).style(style).height(1);
+        let table = Table::new([empty_row], widths)
+            .header(header)
+            .block(table_block)
+            .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
+            .highlight_symbol(">> ")
+            .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
+        f.render_stateful_widget(table, chunks[2], &mut app.table_state);
+    } else {
+        // Bolt: Pass iterator directly to Table::new to eliminate `Vec<Row>` heap allocation and `O(N)` `.collect()` copying on every render tick.
+        let rows = items
+            .iter()
+            .map(|(trace, _size, _count, size_str, count_str)| {
+                // Bolt: Zero-allocation optimization: Use array instead of vec! to prevent `O(N)` heap allocations per table row every render frame.
+                let cells = [
+                    // Zero-allocation: use as_str() instead of trace.clone() to prevent string allocation per table row every frame.
+                    Cell::from(trace.as_str()),
+                    Cell::from(
+                        ratatui::text::Line::from(size_str.as_str())
+                            .alignment(ratatui::layout::Alignment::Right),
+                    ),
+                    Cell::from(
+                        ratatui::text::Line::from(count_str.as_str())
+                            .alignment(ratatui::layout::Alignment::Right),
+                    ),
+                ];
+                Row::new(cells).height(1)
+            });
+
+        let table = Table::new(rows, widths)
+            .header(header)
+            .block(table_block)
+            .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
+            .highlight_symbol(">> ")
+            .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
+        f.render_stateful_widget(table, chunks[2], &mut app.table_state);
+    }
 
     if items.len() > chunks[2].height.saturating_sub(4) as usize {
         let mut scrollbar_state = ScrollbarState::default()
