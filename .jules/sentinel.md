@@ -56,3 +56,7 @@
 **Vulnerability:** Calculating time differences using `SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap()` can cause the application to panic if the system time is somehow earlier than the Unix Epoch. This exposes the application to Denial of Service (DoS) attacks due to clock manipulation or skewed clocks.
 **Learning:** `SystemTime` comparisons are not infallible and should not be forcibly unwrapped.
 **Prevention:** Use `.unwrap_or_default()` or proper error handling when performing time duration calculations to prevent panics and ensure application stability.
+## 2024-08-20 - [DoS via Negative i32 Wrapping in macOS proc_pidinfo]
+**Vulnerability:** Casting `pid as i32` when calling `libc::proc_pidinfo` in macOS environments (in `cli/run.rs` and `tui.rs`) allows user-supplied `u32` PIDs exceeding `i32::MAX` to wrap around into negative values. This can lead to unexpected behavior, panics, or unintended process group targeting.
+**Learning:** Any FFI call requiring an `i32` parameter initialized from an external `u32` source must be bounds-checked.
+**Prevention:** Validate that the PID is greater than 0 and less than or equal to `i32::MAX as u32` before casting.
