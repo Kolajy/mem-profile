@@ -2,11 +2,14 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::RwLock;
 use std::time::Duration;
 
+type MemoryThresholdCallback = Box<dyn Fn(usize) + Send + Sync>;
+type AuditCallback = Box<dyn Fn(Duration) + Send + Sync>;
+
 static MEMORY_THRESHOLD: AtomicUsize = AtomicUsize::new(usize::MAX);
-static THRESHOLD_CALLBACK: RwLock<Option<Box<dyn Fn(usize) + Send + Sync>>> = RwLock::new(None);
+static THRESHOLD_CALLBACK: RwLock<Option<MemoryThresholdCallback>> = RwLock::new(None);
 
 static AUDIT_THRESHOLD_NS: AtomicU64 = AtomicU64::new(u64::MAX);
-static AUDIT_CALLBACK: RwLock<Option<Box<dyn Fn(Duration) + Send + Sync>>> = RwLock::new(None);
+static AUDIT_CALLBACK: RwLock<Option<AuditCallback>> = RwLock::new(None);
 
 /// Sets a memory threshold alert callback.
 /// The callback is triggered when active allocations exceed the threshold.

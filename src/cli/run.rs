@@ -15,6 +15,10 @@ fn get_rss_bytes(
     _page_size: u64,
     _statm_file: &mut Option<std::fs::File>,
 ) -> Option<u64> {
+    if pid == 0 || pid > i32::MAX as u32 {
+        return None;
+    }
+
     let mut info: libc::proc_taskinfo = unsafe { std::mem::zeroed() };
     let res = unsafe {
         libc::proc_pidinfo(

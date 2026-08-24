@@ -132,10 +132,10 @@ fn draw_graph(data: &[f64], total_duration: f64) {
     println!("Memory Usage (RSS) Timeline");
     println!("{}", "=".repeat(80));
 
-    for r in 0..height {
+    for (r, row) in grid.iter().enumerate().take(height) {
         let val = max_v - (range_v * r as f64 / (height - 1) as f64);
         let label = format!("{:>10}", format_bytes(val));
-        let row_str: String = grid[r].iter().collect();
+        let row_str: String = row.iter().collect();
         println!("{} | {}", label, row_str);
     }
     println!("{} +{}", " ".repeat(11), "-".repeat(display_data.len()));

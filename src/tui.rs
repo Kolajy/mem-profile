@@ -174,6 +174,10 @@ fn get_rss_bytes(
     }
     #[cfg(target_os = "macos")]
     {
+        if pid == 0 || pid > i32::MAX as u32 {
+            return None;
+        }
+
         let mut info: libc::proc_taskinfo = unsafe { std::mem::zeroed() };
         let res = unsafe {
             libc::proc_pidinfo(
