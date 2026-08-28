@@ -894,8 +894,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     if items.is_empty() {
         let (msg, style) = if app.process_exited {
             (
-                "- Zero leaks detected. No active allocations.".to_string(),
-                Style::default().fg(Color::Gray),
+                "✓ Zero leaks detected. No active allocations.".to_string(),
+                Style::default().fg(Color::Green),
             )
         } else {
             let spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
