@@ -103,3 +103,6 @@
 ## 2023-10-27 - [Zero-Allocation TUI Tables]
 **Learning:** In high-frequency TUI render loops using the `ratatui` crate, it's common to map over data items to create `Row` structs and inadvertently call `.collect::<Vec<_>>()` before passing them to `Table::new`.
 **Action:** Since `Table::new` accepts `IntoIterator`, always pass the iterator directly instead of collecting it. This eliminates O(N) heap allocations and data copying on every single render frame, which significantly reduces allocator pressure in UI threads.
+## 2024-11-23 - Zero-Allocation TUI Render Formatting
+**Learning:** Calling functions that return newly allocated `String`s (like `format!()` wrappers or `to_formatted_string`) inside a `ratatui` high-frequency render loop causes massive `O(N)` heap allocations on every render tick (e.g., 4 times a second). This degrades performance and puts heavy pressure on the memory allocator.
+**Action:** To eliminate continuous heap allocations in high-frequency TUI render loops, avoid functions that return newly allocated `String`s (like `format!()` wrappers). Instead, cache pre-allocated `String` buffers within the application state (e.g., `App` struct) or row data, and overwrite them in-place using `.clear()` and the `write!` macro.

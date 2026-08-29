@@ -209,6 +209,14 @@ struct App {
     last_snapshot_time: Option<Instant>,
     last_snapshot_name: Option<String>,
     symbol_cache: HashMap<FramePtrs, Arc<String>>,
+    title_buf: String,
+    current_rss_buf: String,
+    peak_rss_buf: String,
+    min_time_buf: String,
+    mid_time_buf: String,
+    max_time_buf: String,
+    max_bytes_buf: String,
+    half_max_bytes_buf: String,
 }
 
 // Wrapping the raw pointer backtrace vectors to safely implement Send/Sync without risking
@@ -240,6 +248,14 @@ impl App {
             last_snapshot_time: None,
             last_snapshot_name: None,
             symbol_cache: HashMap::new(),
+            title_buf: String::with_capacity(128),
+            current_rss_buf: String::with_capacity(32),
+            peak_rss_buf: String::with_capacity(32),
+            min_time_buf: String::with_capacity(32),
+            mid_time_buf: String::with_capacity(32),
+            max_time_buf: String::with_capacity(32),
+            max_bytes_buf: String::with_capacity(32),
+            half_max_bytes_buf: String::with_capacity(32),
         }
     }
 
@@ -691,17 +707,19 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
         .title(title)
         .title_bottom(Line::from(key_spans.clone()).alignment(ratatui::layout::Alignment::Right));
 
-    let current_rss = if let Some(last) = app.rss_history.back() {
-        format_bytes(last.1)
+    app.current_rss_buf.clear();
+    if let Some(last) = app.rss_history.back() {
+        let _ = write_bytes(&mut app.current_rss_buf, last.1);
     } else {
-        "N/A".to_string()
-    };
+        app.current_rss_buf.push_str("N/A");
+    }
 
-    let peak_rss_str = if app.peak_rss > 0.0 {
-        format_bytes(app.peak_rss)
+    app.peak_rss_buf.clear();
+    if app.peak_rss > 0.0 {
+        let _ = write_bytes(&mut app.peak_rss_buf, app.peak_rss);
     } else {
-        "N/A".to_string()
-    };
+        app.peak_rss_buf.push_str("N/A");
+    }
 
     let info_line = Line::from(vec![
         Span::raw(if app.process_exited {
@@ -710,14 +728,14 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             "Current RSS: "
         }),
         Span::styled(
-            current_rss,
+            app.current_rss_buf.as_str(),
             Style::default()
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),
         ),
         Span::raw(" | Peak RSS: "),
         Span::styled(
-            peak_rss_str,
+            app.peak_rss_buf.as_str(),
             Style::default()
                 .fg(Color::Magenta)
                 .add_modifier(Modifier::BOLD),
@@ -782,6 +800,19 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             .style(Style::default().fg(Color::Cyan))
             .data(visible_data)];
 
+        use std::fmt::Write as _;
+        app.min_time_buf.clear();
+        let _ = write!(&mut app.min_time_buf, "{:.1}", min_time);
+        app.mid_time_buf.clear();
+        let _ = write!(&mut app.mid_time_buf, "{:.1}", (min_time + max_time) / 2.0);
+        app.max_time_buf.clear();
+        let _ = write!(&mut app.max_time_buf, "{:.1}", max_time);
+
+        app.half_max_bytes_buf.clear();
+        let _ = write_bytes(&mut app.half_max_bytes_buf, max_bytes / 2.0);
+        app.max_bytes_buf.clear();
+        let _ = write_bytes(&mut app.max_bytes_buf, max_bytes);
+
         let chart = Chart::new(datasets)
             .block(
                 Block::default()
@@ -795,9 +826,9 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                     .style(Style::default().fg(Color::Gray))
                     .bounds([min_time, max_time])
                     .labels(vec![
-                        Span::raw(format!("{:.1}", min_time)),
-                        Span::raw(format!("{:.1}", (min_time + max_time) / 2.0)),
-                        Span::raw(format!("{:.1}", max_time)),
+                        Span::raw(app.min_time_buf.as_str()),
+                        Span::raw(app.mid_time_buf.as_str()),
+                        Span::raw(app.max_time_buf.as_str()),
                     ]),
             )
             .y_axis(
@@ -807,8 +838,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                     .bounds([0.0, max_bytes])
                     .labels(vec![
                         Span::raw("0 B"),
-                        Span::raw(format_bytes(max_bytes / 2.0)),
-                        Span::raw(format_bytes(max_bytes)),
+                        Span::raw(app.half_max_bytes_buf.as_str()),
+                        Span::raw(app.max_bytes_buf.as_str()),
                     ]),
             );
 
@@ -862,27 +893,32 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     } else {
         "Active Allocations"
     };
-    let title_text = if let Some(selected) = app.table_state.selected() {
-        format!(
+
+    use std::fmt::Write as _;
+    app.title_buf.clear();
+    if let Some(selected) = app.table_state.selected() {
+        let _ = write!(
+            &mut app.title_buf,
             "{} ({} of {} items - Sorted by {})",
             base_title,
             (selected + 1).to_formatted_string(&Locale::en),
             items.len().to_formatted_string(&Locale::en),
             sort_label
-        )
+        );
     } else {
-        format!(
+        let _ = write!(
+            &mut app.title_buf,
             "{} ({} items - Sorted by {})",
             base_title,
             items.len().to_formatted_string(&Locale::en),
             sort_label
-        )
-    };
+        );
+    }
 
     let table_block = Block::default()
         .borders(Borders::ALL)
         .border_style(border_style)
-        .title(title_text)
+        .title(app.title_buf.as_str())
         .title_bottom(Line::from(key_spans).alignment(ratatui::layout::Alignment::Right));
 
     let widths = [
@@ -999,10 +1035,4 @@ pub(crate) fn write_bytes(w: &mut impl std::fmt::Write, v: f64) -> std::fmt::Res
         write_float_with_commas(w, v / (1024.0 * 1024.0 * 1024.0))?;
         write!(w, " GB")
     }
-}
-
-fn format_bytes(v: f64) -> String {
-    let mut s = String::new();
-    let _ = write_bytes(&mut s, v);
-    s
 }
