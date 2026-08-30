@@ -91,12 +91,24 @@ pub fn execute(pid: u32) {
     let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) } as u64;
     let peak_rss_bytes = peak_rss_pages * page_size;
     let peak_rss_mb = peak_rss_bytes as f64 / (1024.0 * 1024.0);
+    let int_part = peak_rss_mb.trunc() as u64;
+    let frac_part = (peak_rss_mb.fract() * 100.0).round() as u64;
+    let (int_part, frac_part) = if frac_part == 100 {
+        (int_part + 1, 0)
+    } else {
+        (int_part, frac_part)
+    };
+    let mb_str = format!(
+        "{}.{:02}",
+        int_part.to_formatted_string(&Locale::en),
+        frac_part
+    );
 
     eprintln!("\n=== Memory Profile ===");
     eprintln!("PID: {}", pid);
     eprintln!(
-        "Peak RSS: {:.2} MB ({} bytes)",
-        peak_rss_mb,
+        "Peak RSS: {} MB ({} bytes)",
+        mb_str,
         peak_rss_bytes.to_formatted_string(&Locale::en)
     );
 }

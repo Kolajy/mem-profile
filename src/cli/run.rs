@@ -153,12 +153,24 @@ pub fn execute(command: String, args: Vec<String>) {
         0u64
     };
     let peak_rss_mb = peak_rss_bytes_val as f64 / (1024.0 * 1024.0);
+    let int_part = peak_rss_mb.trunc() as u64;
+    let frac_part = (peak_rss_mb.fract() * 100.0).round() as u64;
+    let (int_part, frac_part) = if frac_part == 100 {
+        (int_part + 1, 0)
+    } else {
+        (int_part, frac_part)
+    };
+    let mb_str = format!(
+        "{}.{:02}",
+        int_part.to_formatted_string(&Locale::en),
+        frac_part
+    );
 
     eprintln!("\n=== Memory Profile ===");
     eprintln!("Command: {} {:?}", command, args);
     eprintln!(
-        "Peak RSS: {:.2} MB ({} bytes)",
-        peak_rss_mb,
+        "Peak RSS: {} MB ({} bytes)",
+        mb_str,
         peak_rss_bytes_val.to_formatted_string(&Locale::en)
     );
 
