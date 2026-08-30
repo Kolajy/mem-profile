@@ -217,6 +217,7 @@ struct App {
     max_time_buf: String,
     max_bytes_buf: String,
     half_max_bytes_buf: String,
+    empty_msg_buf: String,
 }
 
 // Wrapping the raw pointer backtrace vectors to safely implement Send/Sync without risking
@@ -256,6 +257,7 @@ impl App {
             max_time_buf: String::with_capacity(32),
             max_bytes_buf: String::with_capacity(32),
             half_max_bytes_buf: String::with_capacity(32),
+            empty_msg_buf: String::with_capacity(64),
         }
     }
 
@@ -754,8 +756,9 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             .title("RSS Timeline (Last 60s)")
             .borders(Borders::ALL)
             .border_style(border_style);
-        let msg = if app.process_exited {
-            "No memory data collected.".to_string()
+        app.empty_msg_buf.clear();
+        if app.process_exited {
+            app.empty_msg_buf.push_str("No memory data collected.");
         } else {
             let spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
             let t = std::time::SystemTime::now()
@@ -763,9 +766,14 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 .unwrap_or_default()
                 .as_millis();
             let idx = (t / 100) as usize % spinner.len();
-            format!("{} Waiting for initial memory reading...", spinner[idx])
-        };
-        let info = ratatui::widgets::Paragraph::new(msg)
+            use std::fmt::Write as _;
+            let _ = write!(
+                &mut app.empty_msg_buf,
+                "{} Waiting for initial memory reading...",
+                spinner[idx]
+            );
+        }
+        let info = ratatui::widgets::Paragraph::new(app.empty_msg_buf.as_str())
             .block(block)
             .style(Style::default().fg(Color::Gray))
             .alignment(ratatui::layout::Alignment::Center);
@@ -928,11 +936,11 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     ];
 
     if items.is_empty() {
-        let (msg, style) = if app.process_exited {
-            (
-                "✓ Zero leaks detected. No active allocations.".to_string(),
-                Style::default().fg(Color::Green),
-            )
+        app.empty_msg_buf.clear();
+        let style = if app.process_exited {
+            app.empty_msg_buf
+                .push_str("✓ Zero leaks detected. No active allocations.");
+            Style::default().fg(Color::Green)
         } else {
             let spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
             let t = std::time::SystemTime::now()
@@ -940,15 +948,17 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 .unwrap_or_default()
                 .as_millis();
             let idx = (t / 100) as usize % spinner.len();
-            (
-                format!(
-                    "{} No allocations tracked. Waiting for data...",
-                    spinner[idx]
-                ),
-                Style::default().fg(Color::Gray),
-            )
+            use std::fmt::Write as _;
+            let _ = write!(
+                &mut app.empty_msg_buf,
+                "{} No allocations tracked. Waiting for data...",
+                spinner[idx]
+            );
+            Style::default().fg(Color::Gray)
         };
-        let empty_row = Row::new([Cell::from(msg)]).style(style).height(1);
+        let empty_row = Row::new([Cell::from(app.empty_msg_buf.as_str())])
+            .style(style)
+            .height(1);
         let table = Table::new([empty_row], widths)
             .header(header)
             .block(table_block)
