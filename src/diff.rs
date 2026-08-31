@@ -229,7 +229,7 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
         new_paths.len().to_formatted_string(&Locale::en)
     );
     if new_paths.is_empty() {
-        println!("  \x1b[90m- Zero new allocation paths introduced.\x1b[0m");
+        println!("  \x1b[32m✓ Zero new allocation paths introduced.\x1b[0m");
     } else {
         new_paths.sort_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in new_paths {
