@@ -110,3 +110,6 @@
 ## 2025-02-12 - Zero-Allocation Empty State Messages
 **Learning:** In high-frequency TUI render loops, generating empty state messages (like 'Waiting for data...') using `format!` triggers a dynamic heap allocation for every frame. When data is slow to arrive or the process is exited, this creates continuous allocator pressure.
 **Action:** Pre-allocate a buffer (e.g., `empty_msg_buf: String`) in the application state and use `std::fmt::Write` to format dynamic content (like spinners) directly into the buffer, eliminating per-frame string allocations.
+## 2025-02-12 - Zero-Allocation Number Formatting in TUI Loops
+**Learning:** Using `.to_formatted_string()` from the `num-format` crate inside a high-frequency `ratatui` UI render loop triggers dynamic heap allocations (`String`) for every number formatted on every frame, which severely degrades performance.
+**Action:** Replace `.to_formatted_string()` with a stack-allocated `num_format::Buffer::default()` and use `buf.write_formatted(&value, &Locale::en)`. Then use `buf.as_str()` with `write!` into a pre-allocated buffer to achieve zero-allocation formatting in hot paths.
