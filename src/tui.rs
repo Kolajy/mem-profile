@@ -6,7 +6,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use num_format::{Locale, ToFormattedString};
+use num_format::Locale;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -904,13 +904,21 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
 
     use std::fmt::Write as _;
     app.title_buf.clear();
+
+    // ⚡ Bolt: Use stack-allocated `num_format::Buffer` instead of `.to_formatted_string()`
+    // to prevent dynamic `String` heap allocations on every single TUI render frame.
+    let mut items_len_buf = num_format::Buffer::default();
+    items_len_buf.write_formatted(&items.len(), &Locale::en);
+
     if let Some(selected) = app.table_state.selected() {
+        let mut selected_buf = num_format::Buffer::default();
+        selected_buf.write_formatted(&(selected + 1), &Locale::en);
         let _ = write!(
             &mut app.title_buf,
             "{} ({} of {} items - Sorted by {})",
             base_title,
-            (selected + 1).to_formatted_string(&Locale::en),
-            items.len().to_formatted_string(&Locale::en),
+            selected_buf.as_str(),
+            items_len_buf.as_str(),
             sort_label
         );
     } else {
@@ -918,7 +926,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             &mut app.title_buf,
             "{} ({} items - Sorted by {})",
             base_title,
-            items.len().to_formatted_string(&Locale::en),
+            items_len_buf.as_str(),
             sort_label
         );
     }
