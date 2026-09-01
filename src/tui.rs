@@ -207,7 +207,7 @@ struct App {
     table_state: TableState,
     sort_by_size: bool, // true: size, false: count
     last_snapshot_time: Option<Instant>,
-    last_snapshot_name: Option<String>,
+    snapshot_flash_buf: String,
     symbol_cache: HashMap<FramePtrs, Arc<String>>,
     title_buf: String,
     current_rss_buf: String,
@@ -247,7 +247,7 @@ impl App {
             table_state: TableState::default(),
             sort_by_size: true,
             last_snapshot_time: None,
-            last_snapshot_name: None,
+            snapshot_flash_buf: String::with_capacity(128),
             symbol_cache: HashMap::new(),
             title_buf: String::with_capacity(128),
             current_rss_buf: String::with_capacity(32),
@@ -441,7 +441,13 @@ fn run_app<B: Backend>(
                             let name = format!("tui_snapshot_{}.txt", timestamp);
                             dump_to_file(Path::new(&name));
                             app_lock.last_snapshot_time = Some(Instant::now());
-                            app_lock.last_snapshot_name = Some(name);
+                            app_lock.snapshot_flash_buf.clear();
+                            use std::fmt::Write as _;
+                            let _ = write!(
+                                &mut app_lock.snapshot_flash_buf,
+                                " Snapshot saved to {}! ",
+                                name
+                            );
                         }
                         KeyCode::Char('r') => {
                             app_lock.sort_by_size = !app_lock.sort_by_size;
@@ -668,13 +674,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
 
     let mut key_spans = vec![];
     if show_flash {
-        let msg = if let Some(ref name) = app.last_snapshot_name {
-            format!(" Snapshot saved to {}! ", name)
-        } else {
-            " Snapshot Saved! ".to_string()
-        };
         key_spans.push(Span::styled(
-            msg,
+            app.snapshot_flash_buf.as_str(),
             Style::default()
                 .fg(Color::Green)
                 .add_modifier(Modifier::BOLD),
