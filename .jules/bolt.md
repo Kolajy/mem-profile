@@ -113,3 +113,6 @@
 ## 2025-02-12 - Zero-Allocation Number Formatting in TUI Loops
 **Learning:** Using `.to_formatted_string()` from the `num-format` crate inside a high-frequency `ratatui` UI render loop triggers dynamic heap allocations (`String`) for every number formatted on every frame, which severely degrades performance.
 **Action:** Replace `.to_formatted_string()` with a stack-allocated `num_format::Buffer::default()` and use `buf.write_formatted(&value, &Locale::en)`. Then use `buf.as_str()` with `write!` into a pre-allocated buffer to achieve zero-allocation formatting in hot paths.
+## 2025-02-12 - Zero-Allocation Flash Messages in High-Frequency Render Loops
+**Learning:** In high-frequency render loops (like TUI applications using `ratatui`), conditionally formatting strings (e.g., `format!(" Snapshot saved to {}! ", name)`) into `String` allocations inside the render function causes unnecessary heap churn every single tick (e.g. 4 times per second) while the message is visible.
+**Action:** When displaying temporary dynamic messages, pre-format the message string exactly once into a pre-allocated application state buffer (e.g., `snapshot_flash_buf: String`) when the triggering event occurs, and simply pass a slice (`.as_str()`) of that buffer to the UI render function.
