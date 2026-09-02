@@ -119,3 +119,6 @@
 ## 2024-09-02 - Default Hasher Overhead
 **Learning:** The default `HashMap` uses a cryptographically secure SipHash, which is incredibly slow for indexing raw pointer metadata during ultra-hot code paths like global memory allocation intercepting. Profiling showed that SipHash causes severe latency degradation.
 **Action:** Replace `std::collections::HashMap` with `rustc_hash::FxHashMap` inside the core `allocator.rs` registry and `snapshot.rs` to vastly reduce allocation hook overhead and increase throughput without sacrificing safety in this specific embedded context where HashDoS attacks are impossible.
+## 2026-09-02 - Reduce HashMap Hashing Overhead with FxHashMap
+**Learning:** The default `std::collections::HashMap` uses SipHash, which is cryptographically secure but relatively slow. When using HashMaps in ultra-hot paths (like tracking global memory allocations per pointer inside a high-frequency TUI render loop), SipHash introduces severe latency.
+**Action:** Replaced `HashMap` with `rustc_hash::FxHashMap` (which uses the faster FxHash algorithm) for mapping integers and raw pointers where HashDoS is not a risk, significantly reducing allocation hook overhead and increasing TUI throughput.
