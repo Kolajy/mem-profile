@@ -144,12 +144,14 @@ fn read_securely(path: &str) -> std::io::Result<String> {
 }
 
 fn format_signed_diff(diff: isize) -> String {
-    let sign = if diff >= 0 { "+" } else { "-" };
-    format!(
-        "{}{}",
-        sign,
-        diff.unsigned_abs().to_formatted_string(&Locale::en)
-    )
+    let formatted = diff.unsigned_abs().to_formatted_string(&Locale::en);
+    if diff > 0 {
+        format!("\x1b[31m+{}\x1b[0m", formatted)
+    } else if diff < 0 {
+        format!("\x1b[32m-{}\x1b[0m", formatted)
+    } else {
+        format!("\x1b[90m{}\x1b[0m", formatted)
+    }
 }
 
 pub fn diff_snapshots(path1: &str, path2: &str) {
