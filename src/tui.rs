@@ -19,8 +19,9 @@ use ratatui::{
     },
     Frame, Terminal,
 };
+use rustc_hash::FxHashMap;
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::VecDeque,
     io,
     path::Path,
     sync::{
@@ -208,7 +209,7 @@ struct App {
     sort_by_size: bool, // true: size, false: count
     last_snapshot_time: Option<Instant>,
     snapshot_flash_buf: String,
-    symbol_cache: HashMap<FramePtrs, Arc<String>>,
+    symbol_cache: FxHashMap<FramePtrs, Arc<String>>,
     title_buf: String,
     current_rss_buf: String,
     peak_rss_buf: String,
@@ -248,7 +249,7 @@ impl App {
             sort_by_size: true,
             last_snapshot_time: None,
             snapshot_flash_buf: String::with_capacity(128),
-            symbol_cache: HashMap::new(),
+            symbol_cache: FxHashMap::default(),
             title_buf: String::with_capacity(128),
             current_rss_buf: String::with_capacity(32),
             peak_rss_buf: String::with_capacity(32),
@@ -389,8 +390,9 @@ fn run_app<B: Backend>(
     let mut last_tick = Instant::now();
 
     // Bolt: Hoist these temporary collections out of the render loop to prevent continuous heap allocation on every tick.
-    let mut raw_allocs_cache: HashMap<Vec<*mut std::ffi::c_void>, (usize, usize)> = HashMap::new();
-    let mut folded_cache: HashMap<Arc<String>, (usize, usize)> = HashMap::new();
+    let mut raw_allocs_cache: FxHashMap<Vec<*mut std::ffi::c_void>, (usize, usize)> =
+        FxHashMap::default();
+    let mut folded_cache: FxHashMap<Arc<String>, (usize, usize)> = FxHashMap::default();
     let mut items: Vec<(Arc<String>, usize, usize, String, String)> = Vec::with_capacity(128);
 
     loop {
@@ -500,9 +502,9 @@ fn run_app<B: Backend>(
 // Returns a list of (backtrace_string, total_size, count)
 fn get_active_allocations(
     sort_by_size: bool,
-    symbol_cache: &mut HashMap<FramePtrs, Arc<String>>,
-    raw_allocs: &mut HashMap<Vec<*mut std::ffi::c_void>, (usize, usize)>,
-    folded: &mut HashMap<Arc<String>, (usize, usize)>,
+    symbol_cache: &mut FxHashMap<FramePtrs, Arc<String>>,
+    raw_allocs: &mut FxHashMap<Vec<*mut std::ffi::c_void>, (usize, usize)>,
+    folded: &mut FxHashMap<Arc<String>, (usize, usize)>,
     result: &mut Vec<(Arc<String>, usize, usize, String, String)>,
 ) {
     crate::allocator::IN_ALLOCATOR.with(|in_alloc| {
