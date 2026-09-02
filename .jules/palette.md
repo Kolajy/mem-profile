@@ -1,3 +1,6 @@
 ## 2023-08-20 - Semantic Styling for Zero Freed Allocations Empty State
 **Learning:** In the memory diffing CLI, "zero freed allocations" was styled with a green checkmark indicating success. However, zero memory freed implies memory was strictly retained or leaked, which is not a positive outcome. Visual semantics must accurately match the application state.
 **Action:** Always verify if an "empty" or "zero" state genuinely represents a positive outcome before applying success styling (like green checkmarks). Use neutral, informational styling (like grey dashes) for non-positive empty states to avoid misleading users.
+## 2024-05-18 - Color-coding diff outputs for improved CLI scannability
+**Learning:** Using raw ANSI escape codes (e.g., `\x1b[31m`) for color-coding in CLI applications is an effective way to improve scannability, but it can introduce formatting artifacts when users redirect output to a file or a non-TTY environment.
+**Action:** When working on CLI tools, if external dependencies are permitted, prefer robust terminal styling crates (like `colored` or `owo-colors`) that include automatic TTY detection. If restricted from using external dependencies, implement a custom `isatty` check before applying raw ANSI codes to ensure safe file redirection.
