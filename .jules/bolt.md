@@ -116,3 +116,6 @@
 ## 2025-02-12 - Zero-Allocation Flash Messages in High-Frequency Render Loops
 **Learning:** In high-frequency render loops (like TUI applications using `ratatui`), conditionally formatting strings (e.g., `format!(" Snapshot saved to {}! ", name)`) into `String` allocations inside the render function causes unnecessary heap churn every single tick (e.g. 4 times per second) while the message is visible.
 **Action:** When displaying temporary dynamic messages, pre-format the message string exactly once into a pre-allocated application state buffer (e.g., `snapshot_flash_buf: String`) when the triggering event occurs, and simply pass a slice (`.as_str()`) of that buffer to the UI render function.
+## 2024-09-02 - Default Hasher Overhead
+**Learning:** The default `HashMap` uses a cryptographically secure SipHash, which is incredibly slow for indexing raw pointer metadata during ultra-hot code paths like global memory allocation intercepting. Profiling showed that SipHash causes severe latency degradation.
+**Action:** Replace `std::collections::HashMap` with `rustc_hash::FxHashMap` inside the core `allocator.rs` registry and `snapshot.rs` to vastly reduce allocation hook overhead and increase throughput without sacrificing safety in this specific embedded context where HashDoS attacks are impossible.
