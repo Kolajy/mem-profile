@@ -49,10 +49,8 @@ pub fn setup_signal_handlers() {
 }
 
 pub fn dump_to_file(path: &Path) {
-    let mut grouped_allocations: std::collections::HashMap<
-        Vec<*mut std::ffi::c_void>,
-        (usize, usize),
-    > = std::collections::HashMap::new();
+    let mut grouped_allocations: rustc_hash::FxHashMap<Vec<*mut std::ffi::c_void>, (usize, usize)> =
+        rustc_hash::FxHashMap::default();
     let mut total_bytes = 0;
     let mut total_alloc_count = 0;
 

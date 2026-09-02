@@ -1,6 +1,6 @@
+use rustc_hash::FxHashMap;
 use std::alloc::{GlobalAlloc, Layout};
 use std::cell::Cell;
-use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::Instant;
@@ -35,7 +35,7 @@ fn get_shard_idx(ptr: usize) -> usize {
 
 #[derive(Default)]
 pub struct Registry {
-    shards: OnceLock<[Mutex<HashMap<usize, AllocationMetadata>>; SHARD_COUNT]>,
+    shards: OnceLock<[Mutex<FxHashMap<usize, AllocationMetadata>>; SHARD_COUNT]>,
 }
 
 impl Registry {
@@ -45,25 +45,25 @@ impl Registry {
         }
     }
 
-    pub fn get_shards(&self) -> &[Mutex<HashMap<usize, AllocationMetadata>>; SHARD_COUNT] {
+    pub fn get_shards(&self) -> &[Mutex<FxHashMap<usize, AllocationMetadata>>; SHARD_COUNT] {
         self.shards.get_or_init(|| {
             [
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
-                Mutex::new(HashMap::new()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
+                Mutex::new(FxHashMap::default()),
             ]
         })
     }
