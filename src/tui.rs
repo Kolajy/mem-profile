@@ -668,7 +668,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     let key_style = Style::default()
         .fg(Color::Cyan)
         .add_modifier(Modifier::BOLD);
-    let spans = vec![Span::raw(app.pid_title.as_str()), status_span];
+    let dim_style = Style::default().fg(Color::DarkGray);
+    let spans = vec![Span::styled(app.pid_title.as_str(), dim_style), status_span];
 
     let show_flash = app
         .last_snapshot_time
@@ -683,24 +684,27 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 .add_modifier(Modifier::BOLD),
         ));
     } else {
-        key_spans.push(Span::raw(" Keys: "));
+        key_spans.push(Span::styled(" Keys: ", dim_style));
         if !app.process_exited {
             key_spans.push(Span::styled("[p/Space]", key_style));
-            key_spans.push(Span::raw(if app.is_paused {
-                " resume, "
-            } else {
-                " pause, "
-            }));
+            key_spans.push(Span::styled(
+                if app.is_paused {
+                    " resume, "
+                } else {
+                    " pause, "
+                },
+                dim_style,
+            ));
         }
         key_spans.extend(vec![
             Span::styled("[s]", key_style),
-            Span::raw("napshot, "),
+            Span::styled("napshot, ", dim_style),
             Span::styled("[r]", key_style),
-            Span::raw("e-sort, "),
+            Span::styled("e-sort, ", dim_style),
             Span::styled("[q]", key_style),
-            Span::raw("uit, "),
+            Span::styled("uit, ", dim_style),
             Span::styled("[↑/↓/j/k/Pg/Home/End]", key_style),
-            Span::raw(" nav "),
+            Span::styled(" nav ", dim_style),
         ]);
     }
 
@@ -727,18 +731,21 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     }
 
     let info_line = Line::from(vec![
-        Span::raw(if app.process_exited {
-            "Final RSS: "
-        } else {
-            "Current RSS: "
-        }),
+        Span::styled(
+            if app.process_exited {
+                "Final RSS: "
+            } else {
+                "Current RSS: "
+            },
+            dim_style,
+        ),
         Span::styled(
             app.current_rss_buf.as_str(),
             Style::default()
                 .fg(Color::Cyan)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::raw(" | Peak RSS: "),
+        Span::styled(" | Peak RSS: ", dim_style),
         Span::styled(
             app.peak_rss_buf.as_str(),
             Style::default()
