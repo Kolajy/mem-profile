@@ -6,6 +6,7 @@ use rustc_hash::FxHashMap;
 use std::fmt::Write as _;
 use std::fs::OpenOptions;
 use std::io::Cursor;
+use std::io::IsTerminal;
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::Path;
@@ -36,11 +37,17 @@ pub fn print_leak_report() {
             }
         }
 
+        let is_tty = std::io::stderr().is_terminal();
+
         if raw_leaks.is_empty() {
             eprintln!("\n========================================================================");
             eprintln!("                      mem-profile: Memory Leak Report");
             eprintln!("========================================================================");
-            eprintln!("\x1b[32m✓ Zero leaks detected. No active allocations.\x1b[0m");
+            if is_tty {
+                eprintln!("\x1b[32m✓ Zero leaks detected. No active allocations.\x1b[0m");
+            } else {
+                eprintln!("✓ Zero leaks detected. No active allocations.");
+            }
             eprintln!("========================================================================\n");
             in_alloc.set(was_in);
             return;

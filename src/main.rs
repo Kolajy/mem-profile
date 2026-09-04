@@ -1,7 +1,7 @@
 use num_format::{Locale, ToFormattedString};
 use std::env;
 use std::fs::File;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{IsTerminal, Read, Seek, SeekFrom};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -71,8 +71,13 @@ fn format_bytes(v: f64) -> String {
 }
 
 fn draw_graph(data: &[f64], total_duration: f64) {
+    let is_tty = std::io::stdout().is_terminal();
     if data.is_empty() {
-        println!("\n\x1b[33mi No memory data collected (process ran too fast).\x1b[0m");
+        if is_tty {
+            println!("\n\x1b[33mi No memory data collected (process ran too fast).\x1b[0m");
+        } else {
+            println!("\ni No memory data collected (process ran too fast).");
+        }
         return;
     }
 

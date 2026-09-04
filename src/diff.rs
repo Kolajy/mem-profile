@@ -1,6 +1,7 @@
 use num_format::{Locale, ToFormattedString};
 use rustc_hash::FxHashMap;
 use std::fs;
+use std::io::IsTerminal;
 
 #[derive(Debug, Clone, Default)]
 pub struct AllocationStats {
@@ -143,14 +144,25 @@ fn read_securely(path: &str) -> std::io::Result<String> {
     Ok(content)
 }
 
-fn format_signed_diff(diff: isize) -> String {
+fn format_signed_diff(diff: isize, is_tty: bool) -> String {
     let formatted = diff.unsigned_abs().to_formatted_string(&Locale::en);
-    if diff > 0 {
-        format!("\x1b[31m+{}\x1b[0m", formatted)
-    } else if diff < 0 {
-        format!("\x1b[32m-{}\x1b[0m", formatted)
+
+    if is_tty {
+        if diff > 0 {
+            format!("\x1b[31m+{}\x1b[0m", formatted)
+        } else if diff < 0 {
+            format!("\x1b[32m-{}\x1b[0m", formatted)
+        } else {
+            format!("\x1b[90m{}\x1b[0m", formatted)
+        }
     } else {
-        format!("\x1b[90m{}\x1b[0m", formatted)
+        if diff > 0 {
+            format!("+{}", formatted)
+        } else if diff < 0 {
+            format!("-{}", formatted)
+        } else {
+            formatted
+        }
     }
 }
 
@@ -211,16 +223,22 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
         "--- Net Differences (Changed Paths: {}) ---",
         net_differences.len().to_formatted_string(&Locale::en)
     );
+    let is_tty = std::io::stdout().is_terminal();
+
     if net_differences.is_empty() {
-        println!("  \x1b[90m- Zero net differences detected.\x1b[0m");
+        if is_tty {
+            println!("  \x1b[90m- Zero net differences detected.\x1b[0m");
+        } else {
+            println!("  - Zero net differences detected.");
+        }
     } else {
         net_differences.sort_by_key(|&(_, size_diff, _)| -size_diff.abs());
         for (stack, size_diff, count_diff) in net_differences {
             println!("  Stack: {}", stack);
             println!(
                 "    Size Diff: {} bytes, Count Diff: {}",
-                format_signed_diff(size_diff),
-                format_signed_diff(count_diff)
+                format_signed_diff(size_diff, is_tty),
+                format_signed_diff(count_diff, is_tty)
             );
         }
     }
@@ -231,7 +249,11 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
         new_paths.len().to_formatted_string(&Locale::en)
     );
     if new_paths.is_empty() {
-        println!("  \x1b[32m✓ Zero new allocation paths introduced.\x1b[0m");
+        if is_tty {
+            println!("  \x1b[32m✓ Zero new allocation paths introduced.\x1b[0m");
+        } else {
+            println!("  ✓ Zero new allocation paths introduced.");
+        }
     } else {
         new_paths.sort_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in new_paths {
@@ -250,7 +272,11 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
         freed_paths.len().to_formatted_string(&Locale::en)
     );
     if freed_paths.is_empty() {
-        println!("  \x1b[90m- Zero freed allocation paths.\x1b[0m");
+        if is_tty {
+            println!("  \x1b[90m- Zero freed allocation paths.\x1b[0m");
+        } else {
+            println!("  - Zero freed allocation paths.");
+        }
     } else {
         freed_paths.sort_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in freed_paths {
