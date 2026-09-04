@@ -122,3 +122,6 @@
 ## 2026-09-02 - Reduce HashMap Hashing Overhead with FxHashMap
 **Learning:** The default `std::collections::HashMap` uses SipHash, which is cryptographically secure but relatively slow. When using HashMaps in ultra-hot paths (like tracking global memory allocations per pointer inside a high-frequency TUI render loop), SipHash introduces severe latency.
 **Action:** Replaced `HashMap` with `rustc_hash::FxHashMap` (which uses the faster FxHash algorithm) for mapping integers and raw pointers where HashDoS is not a risk, significantly reducing allocation hook overhead and increasing TUI throughput.
+## 2024-05-19 - Fast HashMap for Aggregation
+**Learning:** In data aggregation functions (like `report.rs`, `pprof.rs`, and `diff.rs`) that group thousands of memory allocations, using `std::collections::HashMap` introduces significant hashing overhead because its default SipHash is unnecessarily slow. For internal pointers and string identifiers where HashDoS is not a concern, the overhead degrades performance.
+**Action:** Replace `std::collections::HashMap` with `rustc_hash::FxHashMap` (using `FxHashMap::default()`) to vastly reduce hashing overhead and improve report/dump generation throughput.

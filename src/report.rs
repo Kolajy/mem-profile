@@ -2,7 +2,7 @@ use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
 use inferno::flamegraph::{from_reader, Options};
 use num_format::{Locale, ToFormattedString};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::fmt::Write as _;
 use std::fs::OpenOptions;
 use std::io::Cursor;
@@ -19,7 +19,7 @@ pub fn print_leak_report() {
         in_alloc.set(true);
 
         // Collect all active allocations from the registry
-        let mut raw_leaks: HashMap<Vec<*mut std::ffi::c_void>, usize> = HashMap::new();
+        let mut raw_leaks: FxHashMap<Vec<*mut std::ffi::c_void>, usize> = FxHashMap::default();
         let mut total_bytes = 0;
 
         for shard_mutex in REGISTRY.get_shards() {
@@ -92,7 +92,7 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
         let was_in = in_alloc.get();
         in_alloc.set(true); // Disable tracking during the whole reporting process to avoid internal memory bloat
 
-        let mut raw_leaks: HashMap<Vec<*mut std::ffi::c_void>, usize> = HashMap::new();
+        let mut raw_leaks: FxHashMap<Vec<*mut std::ffi::c_void>, usize> = FxHashMap::default();
 
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {
@@ -113,7 +113,8 @@ pub fn write_flamegraph<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
         }
 
         // Accumulate memory usage for identical stacks
-        let mut folded_stacks = HashMap::with_capacity(raw_leaks.len());
+        let mut folded_stacks =
+            FxHashMap::with_capacity_and_hasher(raw_leaks.len(), Default::default());
         // Bolt: Hoist the string buffer outside the loop to avoid O(N) heap allocations per frame.
         // Impact: Significant reduction in heap churn and allocator overhead during stack folding.
         let mut stack_str = String::with_capacity(128);

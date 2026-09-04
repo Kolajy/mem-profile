@@ -1,6 +1,6 @@
 use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::fmt::Write as _;
 
 /// Exports active memory allocations to a "folded stack" format.
@@ -8,13 +8,13 @@ use std::fmt::Write as _;
 /// followed by the number of bytes allocated by that stack.
 /// Example: `main;foo;bar 1024`
 pub fn export_folded_stacks() -> String {
-    let mut stacks: HashMap<String, usize> = HashMap::new();
+    let mut stacks: FxHashMap<String, usize> = FxHashMap::default();
 
     crate::allocator::IN_ALLOCATOR.with(|in_alloc| {
         let was_in = in_alloc.get();
         in_alloc.set(true);
 
-        let mut raw_stacks: HashMap<Vec<*mut std::ffi::c_void>, usize> = HashMap::new();
+        let mut raw_stacks: FxHashMap<Vec<*mut std::ffi::c_void>, usize> = FxHashMap::default();
 
         for shard_mutex in REGISTRY.get_shards() {
             if let Ok(shard) = shard_mutex.lock() {

@@ -1,5 +1,5 @@
 use num_format::{Locale, ToFormattedString};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::fs;
 
 #[derive(Debug, Clone, Default)]
@@ -14,8 +14,8 @@ pub struct AllocationStats {
 // Let's assume the snapshot output is standard JSON map of stack to size and count
 // We will write a tiny bespoke JSON parser to avoid adding serde dependencies
 
-fn parse_json_map(json: &str) -> HashMap<&str, AllocationStats> {
-    let mut result = HashMap::new();
+fn parse_json_map(json: &str) -> FxHashMap<&str, AllocationStats> {
+    let mut result = FxHashMap::default();
 
     // Simplistic parser: look for "stack", "size", "count" if array
     // Since we originally saved as HashMap<String, AllocationStats>, it'll be formatted like:
@@ -64,8 +64,8 @@ fn parse_json_map(json: &str) -> HashMap<&str, AllocationStats> {
 }
 
 // Format: [ {"stack": "...", "size": 123, "count": 1}, ... ]
-fn parse_json_array(json: &str) -> HashMap<&str, AllocationStats> {
-    let mut result = HashMap::new();
+fn parse_json_array(json: &str) -> FxHashMap<&str, AllocationStats> {
+    let mut result = FxHashMap::default();
 
     let mut parts_iter = json.split("\"stack\":");
     parts_iter.next(); // Skip the first part
