@@ -1,3 +1,3 @@
-## 2025-02-14 - Improve visual hierarchy in TUI by dimming static text
-**Learning:** Structural boilerplate in TUI apps (like "Keys:", "RSS:", etc.) can distract from primary dynamic data values.
-**Action:** Use a dimmed or dark gray styling for static structural text labels in Ratatui apps to draw user attention to the dynamic primary content.
+## 2025-03-02 - Conditionally disabling ANSI coloring based on TTY presence
+**Learning:** Hardcoded ANSI escape codes in CLI output pollute redirected files (e.g. piping to `> out.txt`) resulting in garbled text. Using `std::io::IsTerminal` to dynamically check if `stdout` or `stderr` is connected to a TTY ensures a cleaner experience for automated workflows while preserving color UX for interactive CLI users.
+**Action:** When implementing colored CLI output, always query `is_terminal()` and fallback to plain text if false. Cache this check outside of tight loops to avoid performance overhead from repeated syscalls.
