@@ -675,19 +675,19 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
         .last_snapshot_time
         .is_some_and(|time| time.elapsed() < Duration::from_secs(3));
 
-    let mut key_spans = vec![];
+    let mut top_key_spans = vec![];
     if show_flash {
-        key_spans.push(Span::styled(
+        top_key_spans.push(Span::styled(
             app.snapshot_flash_buf.as_str(),
             Style::default()
                 .fg(Color::Green)
                 .add_modifier(Modifier::BOLD),
         ));
     } else {
-        key_spans.push(Span::styled(" Keys: ", dim_style));
+        top_key_spans.push(Span::styled(" Keys: ", dim_style));
         if !app.process_exited {
-            key_spans.push(Span::styled("[p/Space]", key_style));
-            key_spans.push(Span::styled(
+            top_key_spans.push(Span::styled("[p/Space]", key_style));
+            top_key_spans.push(Span::styled(
                 if app.is_paused {
                     " resume, "
                 } else {
@@ -696,15 +696,13 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 dim_style,
             ));
         }
-        key_spans.extend(vec![
+        top_key_spans.extend(vec![
             Span::styled("[s]", key_style),
             Span::styled("napshot, ", dim_style),
             Span::styled("[r]", key_style),
             Span::styled("e-sort, ", dim_style),
             Span::styled("[q]", key_style),
-            Span::styled("uit, ", dim_style),
-            Span::styled("[↑/↓/j/k/Pg/Home/End]", key_style),
-            Span::styled(" nav ", dim_style),
+            Span::styled("uit ", dim_style),
         ]);
     }
 
@@ -714,7 +712,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
         .borders(Borders::ALL)
         .border_style(border_style)
         .title(title)
-        .title_bottom(Line::from(key_spans.clone()).alignment(ratatui::layout::Alignment::Right));
+        .title_bottom(Line::from(top_key_spans).alignment(ratatui::layout::Alignment::Right));
 
     app.current_rss_buf.clear();
     if let Some(last) = app.rss_history.back() {
@@ -941,11 +939,20 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
         );
     }
 
+    let mut table_key_spans = vec![];
+    if !show_flash && !items.is_empty() {
+        table_key_spans.push(Span::styled(" Keys: ", dim_style));
+        table_key_spans.extend(vec![
+            Span::styled("[↑/↓/j/k/Pg/Home/End]", key_style),
+            Span::styled(" nav ", dim_style),
+        ]);
+    }
+
     let table_block = Block::default()
         .borders(Borders::ALL)
         .border_style(border_style)
         .title(app.title_buf.as_str())
-        .title_bottom(Line::from(key_spans).alignment(ratatui::layout::Alignment::Right));
+        .title_bottom(Line::from(table_key_spans).alignment(ratatui::layout::Alignment::Right));
 
     let widths = [
         Constraint::Percentage(70),
