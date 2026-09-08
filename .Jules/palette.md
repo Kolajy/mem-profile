@@ -4,3 +4,6 @@
 ## 2025-03-03 - Contextual Keybinds in TUIs
 **Learning:** In TUI applications (like ratatui), presenting all keybinds together globally can lead to visual clutter and suggest actions that are impossible (e.g. scrolling an empty table). Separating them into global controls and widget-specific context controls provides a much cleaner micro-UX.
 **Action:** Place global commands (quit, pause) in the main layout block and widget-specific commands (up/down/j/k for tables) in the widget's block. Conditionally hide widget controls when the widget is empty or inapplicable.
+## 2025-03-04 - ANSI Color Coding in CLI Output
+**Learning:** In CLI reporting tools, applying ANSI color codes to headers, bolding key labels (e.g., 'Command:', 'PID:'), and highlighting primary metrics with distinct colors significantly enhances visual hierarchy and scannability for interactive users.
+**Action:** Implement color enhancements for terminal output while strictly adhering to previous learnings by always wrapping them in a `std::io::IsTerminal` check to ensure graceful fallback to plain text in non-TTY environments.
