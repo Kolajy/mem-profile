@@ -104,11 +104,24 @@ pub fn execute(pid: u32) {
         frac_part
     );
 
-    eprintln!("\n=== Memory Profile ===");
-    eprintln!("PID: {}", pid);
-    eprintln!(
-        "Peak RSS: {} MB ({} bytes)",
-        mb_str,
-        peak_rss_bytes.to_formatted_string(&Locale::en)
-    );
+    use std::io::IsTerminal;
+    let is_tty = std::io::stderr().is_terminal();
+
+    if is_tty {
+        eprintln!("\n\x1b[1;36m=== Memory Profile ===\x1b[0m");
+        eprintln!("\x1b[1mPID:\x1b[0m {}", pid);
+        eprintln!(
+            "\x1b[1mPeak RSS:\x1b[0m \x1b[1;35m{} MB\x1b[0m ({} bytes)",
+            mb_str,
+            peak_rss_bytes.to_formatted_string(&Locale::en)
+        );
+    } else {
+        eprintln!("\n=== Memory Profile ===");
+        eprintln!("PID: {}", pid);
+        eprintln!(
+            "Peak RSS: {} MB ({} bytes)",
+            mb_str,
+            peak_rss_bytes.to_formatted_string(&Locale::en)
+        );
+    }
 }

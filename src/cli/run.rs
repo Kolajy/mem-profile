@@ -166,13 +166,33 @@ pub fn execute(command: String, args: Vec<String>) {
         frac_part
     );
 
-    eprintln!("\n=== Memory Profile ===");
-    eprintln!("Command: {} {:?}", command, args);
-    eprintln!(
-        "Peak RSS: {} MB ({} bytes)",
-        mb_str,
-        peak_rss_bytes_val.to_formatted_string(&Locale::en)
-    );
+    use std::io::IsTerminal;
+    let is_tty = std::io::stderr().is_terminal();
+
+    let args_str = args.join(" ");
+    let cmd_str = if args_str.is_empty() {
+        command.clone()
+    } else {
+        format!("{} {}", command, args_str)
+    };
+
+    if is_tty {
+        eprintln!("\n\x1b[1;36m=== Memory Profile ===\x1b[0m");
+        eprintln!("\x1b[1mCommand:\x1b[0m {}", cmd_str);
+        eprintln!(
+            "\x1b[1mPeak RSS:\x1b[0m \x1b[1;35m{} MB\x1b[0m ({} bytes)",
+            mb_str,
+            peak_rss_bytes_val.to_formatted_string(&Locale::en)
+        );
+    } else {
+        eprintln!("\n=== Memory Profile ===");
+        eprintln!("Command: {}", cmd_str);
+        eprintln!(
+            "Peak RSS: {} MB ({} bytes)",
+            mb_str,
+            peak_rss_bytes_val.to_formatted_string(&Locale::en)
+        );
+    }
 
     if !status.success() {
         if let Some(code) = status.code() {
