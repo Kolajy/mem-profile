@@ -39,38 +39,63 @@ pub fn print_leak_report() {
 
         let is_tty = std::io::stderr().is_terminal();
 
+        let print_header = |is_tty: bool| {
+            if is_tty {
+                eprintln!("\n\x1b[1;36m========================================================================\x1b[0m");
+                eprintln!("\x1b[1;36m                      mem-profile: Memory Leak Report\x1b[0m");
+                eprintln!("\x1b[1;36m========================================================================\x1b[0m");
+            } else {
+                eprintln!("\n========================================================================");
+                eprintln!("                      mem-profile: Memory Leak Report");
+                eprintln!("========================================================================");
+            }
+        };
+
         if raw_leaks.is_empty() {
-            eprintln!("\n========================================================================");
-            eprintln!("                      mem-profile: Memory Leak Report");
-            eprintln!("========================================================================");
+            print_header(is_tty);
             if is_tty {
                 eprintln!("\x1b[32m✓ Zero leaks detected. No active allocations.\x1b[0m");
+                eprintln!("\x1b[1;36m========================================================================\x1b[0m\n");
             } else {
                 eprintln!("✓ Zero leaks detected. No active allocations.");
+                eprintln!("========================================================================\n");
             }
-            eprintln!("========================================================================\n");
             in_alloc.set(was_in);
             return;
         }
 
-        eprintln!("\n========================================================================");
-        eprintln!("                      mem-profile: Memory Leak Report");
-        eprintln!("========================================================================");
-        eprintln!(
-            "Detected {} unique leak stack(s) totaling {} bytes.\n",
-            raw_leaks.len().to_formatted_string(&Locale::en),
-            total_bytes.to_formatted_string(&Locale::en)
-        );
+        print_header(is_tty);
+        if is_tty {
+            eprintln!(
+                "\x1b[1mDetected\x1b[0m \x1b[1;35m{}\x1b[0m \x1b[1munique leak stack(s) totaling\x1b[0m \x1b[1;35m{}\x1b[0m \x1b[1mbytes.\x1b[0m\n",
+                raw_leaks.len().to_formatted_string(&Locale::en),
+                total_bytes.to_formatted_string(&Locale::en)
+            );
+        } else {
+            eprintln!(
+                "Detected {} unique leak stack(s) totaling {} bytes.\n",
+                raw_leaks.len().to_formatted_string(&Locale::en),
+                total_bytes.to_formatted_string(&Locale::en)
+            );
+        }
 
         let mut sorted_leaks: Vec<_> = raw_leaks.iter().collect();
         sorted_leaks.sort_by_key(|&(_, &size)| std::cmp::Reverse(size));
 
         for (i, (frames, size)) in sorted_leaks.into_iter().enumerate() {
-            eprintln!(
-                "Leak Stack {}: {} bytes",
-                (i + 1).to_formatted_string(&Locale::en),
-                size.to_formatted_string(&Locale::en)
-            );
+            if is_tty {
+                eprintln!(
+                    "\x1b[1mLeak Stack {}:\x1b[0m \x1b[1;35m{}\x1b[0m \x1b[1mbytes\x1b[0m",
+                    (i + 1).to_formatted_string(&Locale::en),
+                    size.to_formatted_string(&Locale::en)
+                );
+            } else {
+                eprintln!(
+                    "Leak Stack {}: {} bytes",
+                    (i + 1).to_formatted_string(&Locale::en),
+                    size.to_formatted_string(&Locale::en)
+                );
+            }
 
             let symbols = symbolicate_frames(frames);
             if symbols.is_empty() {
@@ -87,7 +112,11 @@ pub fn print_leak_report() {
             }
             eprintln!();
         }
-        eprintln!("========================================================================\n");
+        if is_tty {
+            eprintln!("\x1b[1;36m========================================================================\x1b[0m\n");
+        } else {
+            eprintln!("========================================================================\n");
+        }
 
         in_alloc.set(was_in);
     });
