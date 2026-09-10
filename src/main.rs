@@ -133,29 +133,59 @@ fn draw_graph(data: &[f64], total_duration: f64) {
         }
     }
 
-    println!("\n{}", "=".repeat(80));
-    println!("Memory Usage (RSS) Timeline");
-    println!("{}", "=".repeat(80));
+    if is_tty {
+        println!("\n\x1b[1;36m{}\x1b[0m", "=".repeat(80));
+        println!("\x1b[1;36mMemory Usage (RSS) Timeline\x1b[0m");
+        println!("\x1b[1;36m{}\x1b[0m", "=".repeat(80));
 
-    for (r, row) in grid.iter().enumerate().take(height) {
-        let val = max_v - (range_v * r as f64 / (height - 1) as f64);
-        let label = format!("{:>10}", format_bytes(val));
-        let row_str: String = row.iter().collect();
-        println!("{} | {}", label, row_str);
-    }
-    println!("{} +{}", " ".repeat(11), "-".repeat(display_data.len()));
+        for (r, row) in grid.iter().enumerate().take(height) {
+            let val = max_v - (range_v * r as f64 / (height - 1) as f64);
+            let label = format!("{:>10}", format_bytes(val));
+            let row_str: String = row.iter().collect();
+            println!("\x1b[1;35m{}\x1b[0m | \x1b[36m{}\x1b[0m", label, row_str);
+        }
+        println!(
+            "{} \x1b[90m+{}\x1b[0m",
+            " ".repeat(11),
+            "-".repeat(display_data.len())
+        );
 
-    let end_label = format!("{:.1}s", total_duration);
-    let mut spaces = display_data.len() as isize - 2 - end_label.len() as isize + 2;
-    if spaces < 1 {
-        spaces = 1;
+        let end_label = format!("{:.1}s", total_duration);
+        let mut spaces = display_data.len() as isize - 2 - end_label.len() as isize + 2;
+        if spaces < 1 {
+            spaces = 1;
+        }
+        println!(
+            "{} \x1b[1;32m0s\x1b[0m{}\x1b[1;32m{}\x1b[0m",
+            " ".repeat(11),
+            " ".repeat(spaces as usize),
+            end_label
+        );
+    } else {
+        println!("\n{}", "=".repeat(80));
+        println!("Memory Usage (RSS) Timeline");
+        println!("{}", "=".repeat(80));
+
+        for (r, row) in grid.iter().enumerate().take(height) {
+            let val = max_v - (range_v * r as f64 / (height - 1) as f64);
+            let label = format!("{:>10}", format_bytes(val));
+            let row_str: String = row.iter().collect();
+            println!("{} | {}", label, row_str);
+        }
+        println!("{} +{}", " ".repeat(11), "-".repeat(display_data.len()));
+
+        let end_label = format!("{:.1}s", total_duration);
+        let mut spaces = display_data.len() as isize - 2 - end_label.len() as isize + 2;
+        if spaces < 1 {
+            spaces = 1;
+        }
+        println!(
+            "{} 0s{}{}",
+            " ".repeat(11),
+            " ".repeat(spaces as usize),
+            end_label
+        );
     }
-    println!(
-        "{} 0s{}{}",
-        " ".repeat(11),
-        " ".repeat(spaces as usize),
-        end_label
-    );
 }
 
 fn main() {

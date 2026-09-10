@@ -7,3 +7,6 @@
 ## 2025-03-04 - ANSI Color Coding in CLI Output
 **Learning:** In CLI reporting tools, applying ANSI color codes to headers, bolding key labels (e.g., 'Command:', 'PID:'), and highlighting primary metrics with distinct colors significantly enhances visual hierarchy and scannability for interactive users.
 **Action:** Implement color enhancements for terminal output while strictly adhering to previous learnings by always wrapping them in a `std::io::IsTerminal` check to ensure graceful fallback to plain text in non-TTY environments.
+## 2025-03-05 - Styling ASCII Charts in CLI
+**Learning:** ASCII charts printed to stdout can look like dense walls of text, making it hard to distinguish axes, labels, and data series at a glance.
+**Action:** Apply targeted ANSI color codes to ASCII charts (e.g. coloring data series, axes, and bounds differently) to improve data scannability for interactive users, ensuring plain-text fallback for non-TTY environments.
