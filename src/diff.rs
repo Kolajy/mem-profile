@@ -216,14 +216,26 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
         }
     }
 
-    println!("=== Heap Profile Snapshot Diff ===");
+    let is_tty = std::io::stdout().is_terminal();
+
+    if is_tty {
+        println!("\x1b[1;36m=== Heap Profile Snapshot Diff ===\x1b[0m");
+    } else {
+        println!("=== Heap Profile Snapshot Diff ===");
+    }
     println!();
 
-    println!(
-        "--- Net Differences (Changed Paths: {}) ---",
-        net_differences.len().to_formatted_string(&Locale::en)
-    );
-    let is_tty = std::io::stdout().is_terminal();
+    if is_tty {
+        println!(
+            "\x1b[1;36m--- Net Differences (Changed Paths: {}) ---\x1b[0m",
+            net_differences.len().to_formatted_string(&Locale::en)
+        );
+    } else {
+        println!(
+            "--- Net Differences (Changed Paths: {}) ---",
+            net_differences.len().to_formatted_string(&Locale::en)
+        );
+    }
 
     if net_differences.is_empty() {
         if is_tty {
@@ -244,10 +256,17 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     }
     println!();
 
-    println!(
-        "--- Newly Introduced Allocation Paths ({}) ---",
-        new_paths.len().to_formatted_string(&Locale::en)
-    );
+    if is_tty {
+        println!(
+            "\x1b[1;36m--- Newly Introduced Allocation Paths ({}) ---\x1b[0m",
+            new_paths.len().to_formatted_string(&Locale::en)
+        );
+    } else {
+        println!(
+            "--- Newly Introduced Allocation Paths ({}) ---",
+            new_paths.len().to_formatted_string(&Locale::en)
+        );
+    }
     if new_paths.is_empty() {
         if is_tty {
             println!("  \x1b[32m✓ Zero new allocation paths introduced.\x1b[0m");
@@ -272,10 +291,17 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     }
     println!();
 
-    println!(
-        "--- Freed Allocation Paths ({}) ---",
-        freed_paths.len().to_formatted_string(&Locale::en)
-    );
+    if is_tty {
+        println!(
+            "\x1b[1;36m--- Freed Allocation Paths ({}) ---\x1b[0m",
+            freed_paths.len().to_formatted_string(&Locale::en)
+        );
+    } else {
+        println!(
+            "--- Freed Allocation Paths ({}) ---",
+            freed_paths.len().to_formatted_string(&Locale::en)
+        );
+    }
     if freed_paths.is_empty() {
         if is_tty {
             println!("  \x1b[90m- Zero freed allocation paths.\x1b[0m");

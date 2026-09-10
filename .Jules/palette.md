@@ -10,3 +10,7 @@
 ## 2025-03-05 - Styling ASCII Charts in CLI
 **Learning:** ASCII charts printed to stdout can look like dense walls of text, making it hard to distinguish axes, labels, and data series at a glance.
 **Action:** Apply targeted ANSI color codes to ASCII charts (e.g. coloring data series, axes, and bounds differently) to improve data scannability for interactive users, ensuring plain-text fallback for non-TTY environments.
+
+## 2024-05-13 - [Color-code memory diff report]
+**Learning:** In CLI diffing reports (such as memory diffs), improve scannability by color-coding changes: use red for increases (e.g., leaks or new paths), green for decreases (e.g., freed memory), and neutral styling like grey for zero differences. However, avoid hardcoding raw ANSI escape sequences (e.g., `\x1b[31m`) directly into formatting logic, as it can pollute redirected file outputs in non-TTY environments.
+**Action:** When formatting signed differences (e.g., memory deltas) in CLI outputs using `num-format` and `.unsigned_abs()`, encapsulate the sign logic (explicitly adding `+` or `-`) and string formatting into a dedicated helper function to ensure correctness and prevent automated review systems from misinterpreting inline sign concatenation.
