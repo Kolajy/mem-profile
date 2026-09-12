@@ -60,12 +60,10 @@ pub fn export_folded_stacks() -> String {
 
                     // Folded stacks use semicolons as frame separators.
                     // Ensure we don't have stray semicolons in function names.
-                    for c in name.chars() {
-                        if c == ';' {
-                            stack_str.push(',');
-                        } else {
-                            stack_str.push(c);
-                        }
+                    if name.contains(';') {
+                        stack_str.push_str(&name.replace(';', ","));
+                    } else {
+                        stack_str.push_str(name);
                     }
                 }
             }
