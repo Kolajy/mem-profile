@@ -128,3 +128,6 @@
 ## 2024-11-23 - Fast string replacement over char pushing
 **Learning:** In Rust, iterating over strings with `.chars()` and conditionally calling `.push()` inside hot paths incurs significant UTF-8 decoding and encoding overhead.
 **Action:** Instead, use fast byte-level checks (e.g., `.contains()`) and bulk memory string operations (e.g., `.replace()` and `.push_str()`) to maximize string concatenation performance.
+## 2024-05-19 - Avoid .chars() and .replace() for string substitution in hot paths
+**Learning:** Iterating over `String`s using `.chars()` and calling `.push()` character-by-character incurs significant UTF-8 decoding/encoding overhead. Furthermore, chaining `.replace()` calls creates costly intermediate heap-allocated `String`s. In extremely hot paths (like flamegraph stack folding processing millions of frames), this causes severe CPU and allocator bottlenecks.
+**Action:** Achieve zero-allocation bulk string manipulation by scanning the `.as_bytes()` slice (since ASCII delimiters like ` ` and `;` never appear as parts of multibyte UTF-8 characters) to find target delimiters and using `.push_str()` on safe sub-slices.
