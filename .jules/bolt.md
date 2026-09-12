@@ -125,3 +125,6 @@
 ## 2024-05-19 - Fast HashMap for Aggregation
 **Learning:** In data aggregation functions (like `report.rs`, `pprof.rs`, and `diff.rs`) that group thousands of memory allocations, using `std::collections::HashMap` introduces significant hashing overhead because its default SipHash is unnecessarily slow. For internal pointers and string identifiers where HashDoS is not a concern, the overhead degrades performance.
 **Action:** Replace `std::collections::HashMap` with `rustc_hash::FxHashMap` (using `FxHashMap::default()`) to vastly reduce hashing overhead and improve report/dump generation throughput.
+## 2024-11-23 - Fast string replacement over char pushing
+**Learning:** In Rust, iterating over strings with `.chars()` and conditionally calling `.push()` inside hot paths incurs significant UTF-8 decoding and encoding overhead.
+**Action:** Instead, use fast byte-level checks (e.g., `.contains()`) and bulk memory string operations (e.g., `.replace()` and `.push_str()`) to maximize string concatenation performance.
