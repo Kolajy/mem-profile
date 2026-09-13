@@ -14,3 +14,6 @@
 ## 2024-05-13 - [Color-code memory diff report]
 **Learning:** In CLI diffing reports (such as memory diffs), improve scannability by color-coding changes: use red for increases (e.g., leaks or new paths), green for decreases (e.g., freed memory), and neutral styling like grey for zero differences. However, avoid hardcoding raw ANSI escape sequences (e.g., `\x1b[31m`) directly into formatting logic, as it can pollute redirected file outputs in non-TTY environments.
 **Action:** When formatting signed differences (e.g., memory deltas) in CLI outputs using `num-format` and `.unsigned_abs()`, encapsulate the sign logic (explicitly adding `+` or `-`) and string formatting into a dedicated helper function to ensure correctness and prevent automated review systems from misinterpreting inline sign concatenation.
+## 2024-09-13 - Inactive Header Contrast
+**Learning:** Using `DarkGray` for inactive table headers causes accessibility and readability regressions on standard dark terminal backgrounds. While `DarkGray` is suitable for dimming structural boilerplate, interactive structural elements like sortable headers need higher baseline contrast.
+**Action:** Use `Color::Gray` instead of `Color::DarkGray` for inactive but interactive TUI table headers to ensure sufficient contrast while maintaining the visual hierarchy against the active header column.
