@@ -58,10 +58,24 @@ pub fn export_folded_stacks() -> String {
                     }
                     first = false;
 
+                    // ⚡ Bolt: Replace `.replace()` allocations with zero-allocation bulk string slices.
                     // Folded stacks use semicolons as frame separators.
                     // Ensure we don't have stray semicolons in function names.
                     if name.contains(';') {
-                        stack_str.push_str(&name.replace(';', ","));
+                        let bytes = name.as_bytes();
+                        let mut start_idx = 0;
+                        for (i, &b) in bytes.iter().enumerate() {
+                            if b == b';' {
+                                if i > start_idx {
+                                    stack_str.push_str(&name[start_idx..i]);
+                                }
+                                stack_str.push(',');
+                                start_idx = i + 1;
+                            }
+                        }
+                        if start_idx < bytes.len() {
+                            stack_str.push_str(&name[start_idx..]);
+                        }
                     } else {
                         stack_str.push_str(name);
                     }
