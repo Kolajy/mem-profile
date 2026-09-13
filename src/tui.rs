@@ -869,7 +869,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 .add_modifier(Modifier::BOLD),
         )
     } else {
-        ("Size   ", Style::default().fg(Color::DarkGray))
+        ("Size   ", Style::default().fg(Color::Gray))
     };
 
     let (count_header, count_style) = if !app.sort_by_size {
@@ -880,7 +880,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 .add_modifier(Modifier::BOLD),
         )
     } else {
-        ("Count  ", Style::default().fg(Color::DarkGray))
+        ("Count  ", Style::default().fg(Color::Gray))
     };
 
     // Bolt: Zero-allocation optimization: Use array instead of vec! to prevent heap allocations for table headers every render tick.
