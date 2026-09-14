@@ -869,7 +869,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 .add_modifier(Modifier::BOLD),
         )
     } else {
-        ("Size   ", Style::default().fg(Color::Gray))
+        ("Size   ", Style::default())
     };
 
     let (count_header, count_style) = if !app.sort_by_size {
@@ -880,12 +880,16 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 .add_modifier(Modifier::BOLD),
         )
     } else {
-        ("Count  ", Style::default().fg(Color::Gray))
+        ("Count  ", Style::default())
     };
 
     // Bolt: Zero-allocation optimization: Use array instead of vec! to prevent heap allocations for table headers every render tick.
     let header_cells = [
-        Cell::from("Backtrace (leaf <- root)").style(Style::default().fg(Color::Yellow)),
+        Cell::from("Backtrace (leaf <- root)").style(
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ),
         Cell::from(
             ratatui::text::Line::from(size_header).alignment(ratatui::layout::Alignment::Right),
         )
@@ -897,7 +901,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     ];
 
     let header = Row::new(header_cells)
-        .style(Style::default().bg(Color::DarkGray))
+        .style(Style::default().add_modifier(Modifier::UNDERLINED))
         .height(1)
         .bottom_margin(1);
 
