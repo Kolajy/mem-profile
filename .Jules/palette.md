@@ -17,3 +17,6 @@
 ## 2024-09-13 - Inactive Header Contrast
 **Learning:** Using `DarkGray` for inactive table headers causes accessibility and readability regressions on standard dark terminal backgrounds. While `DarkGray` is suitable for dimming structural boilerplate, interactive structural elements like sortable headers need higher baseline contrast.
 **Action:** Use `Color::Gray` instead of `Color::DarkGray` for inactive but interactive TUI table headers to ensure sufficient contrast while maintaining the visual hierarchy against the active header column.
+## 2024-09-14 - Improve TUI Table Header Contrast
+**Learning:** Using `Color::DarkGray` backgrounds or text for inactive table headers in TUIs can cause severe readability and accessibility regressions on standard dark terminal themes, rendering them nearly invisible.
+**Action:** Use `Modifier::UNDERLINED` for structural separation and rely on inherited terminal default colors (e.g. `Style::default()`) for inactive states to maintain high contrast.
