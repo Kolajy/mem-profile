@@ -80,7 +80,7 @@ pub fn print_leak_report() {
         }
 
         let mut sorted_leaks: Vec<_> = raw_leaks.iter().collect();
-        sorted_leaks.sort_by_key(|&(_, &size)| std::cmp::Reverse(size));
+        sorted_leaks.sort_unstable_by_key(|&(_, &size)| std::cmp::Reverse(size));
 
         for (i, (frames, size)) in sorted_leaks.into_iter().enumerate() {
             if is_tty {

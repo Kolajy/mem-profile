@@ -606,9 +606,9 @@ fn get_active_allocations(
         result.truncate(i);
 
         if sort_by_size {
-            result.sort_by(|a, b| b.1.cmp(&a.1));
+            result.sort_unstable_by(|a, b| b.1.cmp(&a.1));
         } else {
-            result.sort_by(|a, b| b.2.cmp(&a.2));
+            result.sort_unstable_by(|a, b| b.2.cmp(&a.2));
         }
 
         in_alloc.set(was_in);
