@@ -111,7 +111,7 @@ pub fn dump_to_file(path: &Path) {
 
     // Bolt: Grouping allocations by unique backtraces avoids O(N) backtrace cloning and implicitly avoids expensive repeated symbolication.
     let mut sorted_allocations: Vec<_> = grouped_allocations.into_iter().collect();
-    sorted_allocations.sort_by_key(|&(_, (size, _))| std::cmp::Reverse(size));
+    sorted_allocations.sort_unstable_by_key(|&(_, (size, _))| std::cmp::Reverse(size));
 
     for (i, (frames, (size, count))) in sorted_allocations.into_iter().enumerate() {
         let _ = writeln!(

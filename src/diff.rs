@@ -244,7 +244,7 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
             println!("  - Zero net differences detected.");
         }
     } else {
-        net_differences.sort_by_key(|&(_, size_diff, _)| -size_diff.abs());
+        net_differences.sort_unstable_by_key(|&(_, size_diff, _)| -size_diff.abs());
         for (stack, size_diff, count_diff) in net_differences {
             println!("  Stack: {}", stack);
             println!(
@@ -274,7 +274,7 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
             println!("  ✓ Zero new allocation paths introduced.");
         }
     } else {
-        new_paths.sort_by_key(|&(_, size, _)| -(size as isize));
+        new_paths.sort_unstable_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in new_paths {
             println!("  Stack: {}", stack);
             let size_str = size.to_formatted_string(&Locale::en);
@@ -309,7 +309,7 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
             println!("  - Zero freed allocation paths.");
         }
     } else {
-        freed_paths.sort_by_key(|&(_, size, _)| -(size as isize));
+        freed_paths.sort_unstable_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in freed_paths {
             println!("  Stack: {}", stack);
             let size_str = size.to_formatted_string(&Locale::en);
