@@ -135,3 +135,7 @@
 ## 2024-05-20 - In-place Sorting to Prevent Allocations
 **Learning:** Rust's default `.sort_by()` and `.sort_by_key()` are stable sorts that allocate an `O(N/2)` heap buffer. In high-frequency hot paths (like TUI render loops mapping over thousands of rows) or large aggregation reporting, this creates continuous dynamic heap churn.
 **Action:** Use `.sort_unstable_by()` or `.sort_unstable_by_key()` instead to perform zero-allocation, in-place sorting whenever the relative order of equal elements doesn't matter.
+
+## 2023-10-25 - [TUI/CLI background loop CPU overhead reduction]
+**Learning:** Found significant CPU overhead in background metric polling threads (`/proc/<pid>/statm`) caused by repeated UTF-8 validation (`from_utf8`) and string splitting operations on small fixed-format metric files.
+**Action:** When extracting simple numerics from well-known Linux system stat files in high-frequency hot paths, always parse integers directly from the raw byte buffer (`[u8]`) using state machine loops to achieve zero-allocation, bypassing UTF-8 decode overhead.
