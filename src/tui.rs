@@ -674,7 +674,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                     .fg(Color::Green)
                     .add_modifier(Modifier::BOLD),
             ),
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(Color::Green),
         )
     };
 
