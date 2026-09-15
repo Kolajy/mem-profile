@@ -20,3 +20,6 @@
 ## 2024-09-14 - Improve TUI Table Header Contrast
 **Learning:** Using `Color::DarkGray` backgrounds or text for inactive table headers in TUIs can cause severe readability and accessibility regressions on standard dark terminal themes, rendering them nearly invisible.
 **Action:** Use `Modifier::UNDERLINED` for structural separation and rely on inherited terminal default colors (e.g. `Style::default()`) for inactive states to maintain high contrast.
+## 2025-03-06 - Dynamic Structural Colors in TUIs
+**Learning:** In TUI applications, ensure cohesive visual state indication by aligning the semantic color of structural elements (like dynamic borders) with their corresponding state text (e.g., using `Color::Green` for both the border and `[RUNNING]` text), avoiding mismatched combinations with dim boilerplate colors.
+**Action:** When a structural element (like a block border) is used to convey application state dynamically, always coordinate its color exactly with the state text. Never hardcode these state-driven structural colors to neutral boilerplate colors like `DarkGray`.
