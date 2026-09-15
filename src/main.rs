@@ -27,12 +27,25 @@ fn get_rss(statm_path: &str, page_size: u64, statm_file: &mut Option<File>) -> O
 
         let mut buf = [0u8; 128];
         if let Ok(n) = file.read(&mut buf) {
-            if let Ok(contents) = std::str::from_utf8(&buf[..n]) {
-                if let Some(part) = contents.split_whitespace().nth(1) {
-                    if let Ok(pages) = part.parse::<u64>() {
-                        return Some(pages * page_size);
+            // ⚡ Bolt: Parse the second integer (RSS pages) directly from the raw byte buffer.
+            // This eliminates UTF-8 validation (`from_utf8`) and string splitting overhead in the high-frequency polling loop.
+            let mut state = 0;
+            let mut pages: u64 = 0;
+            let mut found = false;
+            for &b in &buf[..n] {
+                if b == b' ' {
+                    if state == 0 {
+                        state = 1;
+                    } else if state == 1 {
+                        break;
                     }
+                } else if state == 1 && b.is_ascii_digit() {
+                    pages = pages * 10 + (b - b'0') as u64;
+                    found = true;
                 }
+            }
+            if found {
+                return Some(pages * page_size);
             }
         } else {
             *statm_file = None;
