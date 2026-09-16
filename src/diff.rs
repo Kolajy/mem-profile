@@ -246,12 +246,21 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     } else {
         net_differences.sort_unstable_by_key(|&(_, size_diff, _)| -size_diff.abs());
         for (stack, size_diff, count_diff) in net_differences {
-            println!("  Stack: {}", stack);
-            println!(
-                "    Size Diff: {} bytes, Count Diff: {}",
-                format_signed_diff(size_diff, is_tty),
-                format_signed_diff(count_diff, is_tty)
-            );
+            if is_tty {
+                println!("  \x1b[1mStack:\x1b[0m \x1b[33m{}\x1b[0m", stack);
+                println!(
+                    "    \x1b[1mSize Diff:\x1b[0m {} bytes, \x1b[1mCount Diff:\x1b[0m {}",
+                    format_signed_diff(size_diff, is_tty),
+                    format_signed_diff(count_diff, is_tty)
+                );
+            } else {
+                println!("  Stack: {}", stack);
+                println!(
+                    "    Size Diff: {} bytes, Count Diff: {}",
+                    format_signed_diff(size_diff, is_tty),
+                    format_signed_diff(count_diff, is_tty)
+                );
+            }
         }
     }
     println!();
@@ -276,15 +285,16 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     } else {
         new_paths.sort_unstable_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in new_paths {
-            println!("  Stack: {}", stack);
             let size_str = size.to_formatted_string(&Locale::en);
             let count_str = count.to_formatted_string(&Locale::en);
             if is_tty {
+                println!("  \x1b[1mStack:\x1b[0m \x1b[33m{}\x1b[0m", stack);
                 println!(
-                    "    Size: \x1b[31m+{}\x1b[0m bytes, Count: \x1b[31m+{}\x1b[0m",
+                    "    \x1b[1mSize:\x1b[0m \x1b[31m+{}\x1b[0m bytes, \x1b[1mCount:\x1b[0m \x1b[31m+{}\x1b[0m",
                     size_str, count_str
                 );
             } else {
+                println!("  Stack: {}", stack);
                 println!("    Size: +{} bytes, Count: +{}", size_str, count_str);
             }
         }
@@ -311,15 +321,16 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     } else {
         freed_paths.sort_unstable_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in freed_paths {
-            println!("  Stack: {}", stack);
             let size_str = size.to_formatted_string(&Locale::en);
             let count_str = count.to_formatted_string(&Locale::en);
             if is_tty {
+                println!("  \x1b[1mStack:\x1b[0m \x1b[33m{}\x1b[0m", stack);
                 println!(
-                    "    Size: \x1b[32m-{}\x1b[0m bytes, Count: \x1b[32m-{}\x1b[0m",
+                    "    \x1b[1mSize:\x1b[0m \x1b[32m-{}\x1b[0m bytes, \x1b[1mCount:\x1b[0m \x1b[32m-{}\x1b[0m",
                     size_str, count_str
                 );
             } else {
+                println!("  Stack: {}", stack);
                 println!("    Size: -{} bytes, Count: -{}", size_str, count_str);
             }
         }
