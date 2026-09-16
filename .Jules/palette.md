@@ -23,3 +23,6 @@
 ## 2025-03-06 - Dynamic Structural Colors in TUIs
 **Learning:** In TUI applications, ensure cohesive visual state indication by aligning the semantic color of structural elements (like dynamic borders) with their corresponding state text (e.g., using `Color::Green` for both the border and `[RUNNING]` text), avoiding mismatched combinations with dim boilerplate colors.
 **Action:** When a structural element (like a block border) is used to convey application state dynamically, always coordinate its color exactly with the state text. Never hardcode these state-driven structural colors to neutral boilerplate colors like `DarkGray`.
+## 2025-03-08 - Explicit Verification Before Planning
+**Learning:** When terminal output from exploration commands (like `cat` or `sed`) is truncated, guessing the unseen code to build SEARCH/REPLACE blocks will fail the Groundedness and Exploration rules during plan review.
+**Action:** When terminal output is truncated, never guess the unseen code. Instead, use targeted searches (e.g., `grep -n -A 15 "<specific_code_signature>"`) to explicitly read and verify the exact file contents before proposing an execution plan.
