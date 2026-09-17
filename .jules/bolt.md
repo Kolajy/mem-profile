@@ -139,3 +139,6 @@
 ## 2023-10-25 - [TUI/CLI background loop CPU overhead reduction]
 **Learning:** Found significant CPU overhead in background metric polling threads (`/proc/<pid>/statm`) caused by repeated UTF-8 validation (`from_utf8`) and string splitting operations on small fixed-format metric files.
 **Action:** When extracting simple numerics from well-known Linux system stat files in high-frequency hot paths, always parse integers directly from the raw byte buffer (`[u8]`) using state machine loops to achieve zero-allocation, bypassing UTF-8 decode overhead.
+## 2025-02-13 - Avoid to_formatted_string for high-frequency formatting
+**Learning:** Calling `.to_formatted_string()` on numeric types inside high-frequency functions dynamically allocates a short-lived heap `String`, imposing severe GC/allocator overhead when executed continually, such as during tight loops plotting TUI graphs.
+**Action:** Replace it with the underlying stack-allocated `num_format::Buffer::default()` structure, using `buf.write_formatted(...)` followed by `.as_str()`, enabling zero-allocation number formatting into macros like `format!` and `write!`.
