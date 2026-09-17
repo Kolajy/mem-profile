@@ -1,4 +1,4 @@
-use num_format::{Locale, ToFormattedString};
+use num_format::Locale;
 use std::env;
 use std::fs::File;
 use std::io::{IsTerminal, Read, Seek, SeekFrom};
@@ -57,20 +57,26 @@ fn get_rss(statm_path: &str, page_size: u64, statm_file: &mut Option<File>) -> O
 fn format_float_with_commas(val: f64) -> String {
     let int_part = val.trunc() as u64;
     let frac_part = (val.fract() * 10.0).round() as u64;
+
+    // ⚡ Bolt: Use stack-allocated `num_format::Buffer` instead of `.to_formatted_string()`
+    // to prevent intermediate dynamic `String` heap allocations during formatting.
+    let mut buf = num_format::Buffer::default();
     if frac_part == 10 {
-        format!("{}.0", (int_part + 1).to_formatted_string(&Locale::en))
+        buf.write_formatted(&(int_part + 1), &Locale::en);
+        format!("{}.0", buf.as_str())
     } else {
-        format!(
-            "{}.{}",
-            int_part.to_formatted_string(&Locale::en),
-            frac_part
-        )
+        buf.write_formatted(&int_part, &Locale::en);
+        format!("{}.{}", buf.as_str(), frac_part)
     }
 }
 
 fn format_bytes(v: f64) -> String {
     if v < 1024.0 {
-        format!("{} B", (v as u64).to_formatted_string(&Locale::en))
+        // ⚡ Bolt: Use stack-allocated `num_format::Buffer` instead of `.to_formatted_string()`
+        // to prevent intermediate dynamic `String` heap allocations during formatting.
+        let mut buf = num_format::Buffer::default();
+        buf.write_formatted(&(v as u64), &Locale::en);
+        format!("{} B", buf.as_str())
     } else if v < 1024.0 * 1024.0 {
         format!("{} KB", format_float_with_commas(v / 1024.0))
     } else if v < 1024.0 * 1024.0 * 1024.0 {
