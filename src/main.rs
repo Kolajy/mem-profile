@@ -160,8 +160,17 @@ fn draw_graph(data: &[f64], total_duration: f64) {
         for (r, row) in grid.iter().enumerate().take(height) {
             let val = max_v - (range_v * r as f64 / (height - 1) as f64);
             let label = format!("{:>10}", format_bytes(val));
-            let row_str: String = row.iter().collect();
-            println!("\x1b[1;35m{}\x1b[0m | \x1b[36m{}\x1b[0m", label, row_str);
+            let mut row_str = String::with_capacity(row.len() * 10);
+            for &c in row {
+                if c == '*' {
+                    row_str.push_str("\x1b[1;36m*\x1b[0m");
+                } else if c == '|' {
+                    row_str.push_str("\x1b[90m|\x1b[0m");
+                } else {
+                    row_str.push(c);
+                }
+            }
+            println!("\x1b[1;35m{}\x1b[0m \x1b[90m|\x1b[0m {}", label, row_str);
         }
         println!(
             "{} \x1b[90m+{}\x1b[0m",
