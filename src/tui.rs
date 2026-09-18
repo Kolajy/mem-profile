@@ -849,24 +849,60 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             )
             .x_axis(
                 Axis::default()
-                    .title("Time (s)")
+                    .title(Span::styled(
+                        "Time (s)",
+                        Style::default().add_modifier(Modifier::BOLD),
+                    ))
                     .style(Style::default().fg(Color::Gray))
                     .bounds([min_time, max_time])
                     .labels(vec![
-                        Span::raw(app.min_time_buf.as_str()),
-                        Span::raw(app.mid_time_buf.as_str()),
-                        Span::raw(app.max_time_buf.as_str()),
+                        Span::styled(
+                            app.min_time_buf.as_str(),
+                            Style::default()
+                                .fg(Color::Green)
+                                .add_modifier(Modifier::BOLD),
+                        ),
+                        Span::styled(
+                            app.mid_time_buf.as_str(),
+                            Style::default()
+                                .fg(Color::Green)
+                                .add_modifier(Modifier::BOLD),
+                        ),
+                        Span::styled(
+                            app.max_time_buf.as_str(),
+                            Style::default()
+                                .fg(Color::Green)
+                                .add_modifier(Modifier::BOLD),
+                        ),
                     ]),
             )
             .y_axis(
                 Axis::default()
-                    .title("Bytes")
+                    .title(Span::styled(
+                        "Bytes",
+                        Style::default().add_modifier(Modifier::BOLD),
+                    ))
                     .style(Style::default().fg(Color::Gray))
                     .bounds([0.0, max_bytes])
                     .labels(vec![
-                        Span::raw("0 B"),
-                        Span::raw(app.half_max_bytes_buf.as_str()),
-                        Span::raw(app.max_bytes_buf.as_str()),
+                        Span::styled(
+                            "0 B",
+                            Style::default()
+                                .fg(Color::Magenta)
+                                .add_modifier(Modifier::BOLD),
+                        ),
+                        Span::styled(
+                            app.half_max_bytes_buf.as_str(),
+                            Style::default()
+                                .fg(Color::Magenta)
+                                .add_modifier(Modifier::BOLD),
+                        ),
+                        Span::styled(
+                            app.max_bytes_buf.as_str(),
+                            Style::default()
+                                .fg(Color::Magenta)
+                                .add_modifier(Modifier::BOLD),
+                        ),
                     ]),
             );
 

@@ -29,3 +29,6 @@
 ## 2025-03-08 - Styling ASCII Charts in CLI (Data Series and Axes)
 **Learning:** ASCII charts printed to stdout can look like dense walls of text, making it hard to distinguish axes, labels, and data series at a glance.
 **Action:** Apply targeted ANSI color codes to ASCII charts (e.g. coloring data series, axes, and bounds differently) to improve data scannability for interactive users, ensuring plain-text fallback for non-TTY environments.
+## 2025-03-09 - Cross-Target Visual Consistency
+**Learning:** Ratatui Charts with unstyled (Span::raw) labels can look like dense walls of text, similar to unstyled ASCII charts. When an application supports multiple rendering targets (e.g. interactive CLI and rich TUI), maintaining consistent semantic color mapping across them (e.g. green for time, magenta for bytes) reduces cognitive load as users switch between modes.
+**Action:** Always apply explicit, targeted styles (like `Span::styled`) to TUI chart labels and axes, ensuring the chosen colors match the semantic colors used in the application's interactive CLI equivalents.
