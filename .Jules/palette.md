@@ -26,3 +26,6 @@
 ## 2025-03-08 - Explicit Verification Before Planning
 **Learning:** When terminal output from exploration commands (like `cat` or `sed`) is truncated, guessing the unseen code to build SEARCH/REPLACE blocks will fail the Groundedness and Exploration rules during plan review.
 **Action:** When terminal output is truncated, never guess the unseen code. Instead, use targeted searches (e.g., `grep -n -A 15 "<specific_code_signature>"`) to explicitly read and verify the exact file contents before proposing an execution plan.
+## 2025-03-08 - Styling ASCII Charts in CLI (Data Series and Axes)
+**Learning:** ASCII charts printed to stdout can look like dense walls of text, making it hard to distinguish axes, labels, and data series at a glance.
+**Action:** Apply targeted ANSI color codes to ASCII charts (e.g. coloring data series, axes, and bounds differently) to improve data scannability for interactive users, ensuring plain-text fallback for non-TTY environments.
