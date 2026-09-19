@@ -851,9 +851,11 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 Axis::default()
                     .title(Span::styled(
                         "Time (s)",
-                        Style::default().add_modifier(Modifier::BOLD),
+                        Style::default()
+                            .fg(Color::Green)
+                            .add_modifier(Modifier::BOLD),
                     ))
-                    .style(Style::default().fg(Color::Gray))
+                    .style(Style::default().fg(Color::Green))
                     .bounds([min_time, max_time])
                     .labels(vec![
                         Span::styled(
@@ -880,9 +882,11 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 Axis::default()
                     .title(Span::styled(
                         "Bytes",
-                        Style::default().add_modifier(Modifier::BOLD),
+                        Style::default()
+                            .fg(Color::Magenta)
+                            .add_modifier(Modifier::BOLD),
                     ))
-                    .style(Style::default().fg(Color::Gray))
+                    .style(Style::default().fg(Color::Magenta))
                     .bounds([0.0, max_bytes])
                     .labels(vec![
                         Span::styled(
