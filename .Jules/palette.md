@@ -32,3 +32,6 @@
 ## 2025-03-09 - Cross-Target Visual Consistency
 **Learning:** Ratatui Charts with unstyled (Span::raw) labels can look like dense walls of text, similar to unstyled ASCII charts. When an application supports multiple rendering targets (e.g. interactive CLI and rich TUI), maintaining consistent semantic color mapping across them (e.g. green for time, magenta for bytes) reduces cognitive load as users switch between modes.
 **Action:** Always apply explicit, targeted styles (like `Span::styled`) to TUI chart labels and axes, ensuring the chosen colors match the semantic colors used in the application's interactive CLI equivalents.
+## $(date +%Y-%m-%d) - Color-code memory chart axes
+**Learning:** In TUI applications built with `ratatui` that also feature CLI equivalents, maintain consistent semantic color mapping across rendering targets to reduce cognitive load. Always apply explicit styles (e.g., `Span::styled`) to TUI chart labels and axes, ensuring their colors match the semantic colors used in the CLI output (e.g., green for time, magenta for bytes) rather than leaving them unstyled or default gray.
+**Action:** Always verify color mapping matches standard palette.
