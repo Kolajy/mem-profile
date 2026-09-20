@@ -821,7 +821,12 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             .max(1024.0 * 1024.0);
 
         let datasets = vec![Dataset::default()
-            .name("RSS")
+            .name(Span::styled(
+                "RSS",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ))
             .marker(symbols::Marker::Braille)
             .graph_type(GraphType::Line)
             .style(Style::default().fg(Color::Cyan))

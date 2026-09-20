@@ -35,3 +35,6 @@
 ## $(date +%Y-%m-%d) - Color-code memory chart axes
 **Learning:** In TUI applications built with `ratatui` that also feature CLI equivalents, maintain consistent semantic color mapping across rendering targets to reduce cognitive load. Always apply explicit styles (e.g., `Span::styled`) to TUI chart labels and axes, ensuring their colors match the semantic colors used in the CLI output (e.g., green for time, magenta for bytes) rather than leaving them unstyled or default gray.
 **Action:** Always verify color mapping matches standard palette.
+## $(date +%Y-%m-%d) - Explicit Check Before Patching
+**Learning:** When testing code modifications directly via shell commands (like using `sed`) prior to finalizing an execution plan, ensure you revert those changes (e.g., using `git restore <file>`) before executing `replace_with_git_merge_diff`. Failing to do so causes the `SEARCH` block to fail because the target file already contains the modified state.
+**Action:** Before executing `replace_with_git_merge_diff`, run `git status` or `git diff` to confirm the target file is in the expected initial state. If modified, use `git restore <file>` to revert it so the SEARCH block matches perfectly.
