@@ -38,3 +38,6 @@
 ## $(date +%Y-%m-%d) - Explicit Check Before Patching
 **Learning:** When testing code modifications directly via shell commands (like using `sed`) prior to finalizing an execution plan, ensure you revert those changes (e.g., using `git restore <file>`) before executing `replace_with_git_merge_diff`. Failing to do so causes the `SEARCH` block to fail because the target file already contains the modified state.
 **Action:** Before executing `replace_with_git_merge_diff`, run `git status` or `git diff` to confirm the target file is in the expected initial state. If modified, use `git restore <file>` to revert it so the SEARCH block matches perfectly.
+## $(date +%Y-%m-%d) - Improve TUI Boilerplate Contrast
+**Learning:** Using `Color::DarkGray` for dim structural boilerplate text (like inactive keybinds or static labels) in TUIs can cause severe readability and accessibility regressions on standard dark terminal themes, rendering them nearly invisible.
+**Action:** Use `Color::Gray` instead of `Color::DarkGray` for dim boilerplate text to ensure sufficient contrast and legibility while maintaining the visual hierarchy against active content.
