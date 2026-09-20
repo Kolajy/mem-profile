@@ -681,7 +681,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     let key_style = Style::default()
         .fg(Color::Cyan)
         .add_modifier(Modifier::BOLD);
-    let dim_style = Style::default().fg(Color::DarkGray);
+    let dim_style = Style::default().fg(Color::Gray);
     let spans = vec![Span::styled(app.pid_title.as_str(), dim_style), status_span];
 
     let show_flash = app
