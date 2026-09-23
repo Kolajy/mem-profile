@@ -1,4 +1,4 @@
-use num_format::{Locale, ToFormattedString};
+use num_format::{Buffer, Locale};
 use rustc_hash::FxHashMap;
 use std::fs;
 use std::io::IsTerminal;
@@ -145,7 +145,9 @@ fn read_securely(path: &str) -> std::io::Result<String> {
 }
 
 fn format_signed_diff(diff: isize, is_tty: bool) -> String {
-    let formatted = diff.unsigned_abs().to_formatted_string(&Locale::en);
+    let mut buf = Buffer::default();
+    buf.write_formatted(&diff.unsigned_abs(), &Locale::en);
+    let formatted = buf.as_str();
 
     if is_tty {
         if diff > 0 {
@@ -161,7 +163,7 @@ fn format_signed_diff(diff: isize, is_tty: bool) -> String {
         } else if diff < 0 {
             format!("-{}", formatted)
         } else {
-            formatted
+            formatted.to_string()
         }
     }
 }
@@ -225,15 +227,18 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     }
     println!();
 
+    let mut net_diff_len_buf = Buffer::default();
+    net_diff_len_buf.write_formatted(&net_differences.len(), &Locale::en);
+
     if is_tty {
         println!(
             "\x1b[1;36m--- Net Differences (Changed Paths: {}) ---\x1b[0m",
-            net_differences.len().to_formatted_string(&Locale::en)
+            net_diff_len_buf.as_str()
         );
     } else {
         println!(
             "--- Net Differences (Changed Paths: {}) ---",
-            net_differences.len().to_formatted_string(&Locale::en)
+            net_diff_len_buf.as_str()
         );
     }
 
@@ -265,15 +270,18 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     }
     println!();
 
+    let mut new_paths_len_buf = Buffer::default();
+    new_paths_len_buf.write_formatted(&new_paths.len(), &Locale::en);
+
     if is_tty {
         println!(
             "\x1b[1;36m--- Newly Introduced Allocation Paths ({}) ---\x1b[0m",
-            new_paths.len().to_formatted_string(&Locale::en)
+            new_paths_len_buf.as_str()
         );
     } else {
         println!(
             "--- Newly Introduced Allocation Paths ({}) ---",
-            new_paths.len().to_formatted_string(&Locale::en)
+            new_paths_len_buf.as_str()
         );
     }
     if new_paths.is_empty() {
@@ -285,8 +293,12 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     } else {
         new_paths.sort_unstable_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in new_paths {
-            let size_str = size.to_formatted_string(&Locale::en);
-            let count_str = count.to_formatted_string(&Locale::en);
+            let mut size_buf = Buffer::default();
+            size_buf.write_formatted(&size, &Locale::en);
+            let mut count_buf = Buffer::default();
+            count_buf.write_formatted(&count, &Locale::en);
+            let size_str = size_buf.as_str();
+            let count_str = count_buf.as_str();
             if is_tty {
                 println!("  \x1b[1mStack:\x1b[0m \x1b[33m{}\x1b[0m", stack);
                 println!(
@@ -301,15 +313,18 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     }
     println!();
 
+    let mut freed_paths_len_buf = Buffer::default();
+    freed_paths_len_buf.write_formatted(&freed_paths.len(), &Locale::en);
+
     if is_tty {
         println!(
             "\x1b[1;36m--- Freed Allocation Paths ({}) ---\x1b[0m",
-            freed_paths.len().to_formatted_string(&Locale::en)
+            freed_paths_len_buf.as_str()
         );
     } else {
         println!(
             "--- Freed Allocation Paths ({}) ---",
-            freed_paths.len().to_formatted_string(&Locale::en)
+            freed_paths_len_buf.as_str()
         );
     }
     if freed_paths.is_empty() {
@@ -321,8 +336,12 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     } else {
         freed_paths.sort_unstable_by_key(|&(_, size, _)| -(size as isize));
         for (stack, size, count) in freed_paths {
-            let size_str = size.to_formatted_string(&Locale::en);
-            let count_str = count.to_formatted_string(&Locale::en);
+            let mut size_buf = Buffer::default();
+            size_buf.write_formatted(&size, &Locale::en);
+            let mut count_buf = Buffer::default();
+            count_buf.write_formatted(&count, &Locale::en);
+            let size_str = size_buf.as_str();
+            let count_str = count_buf.as_str();
             if is_tty {
                 println!("  \x1b[1mStack:\x1b[0m \x1b[33m{}\x1b[0m", stack);
                 println!(
