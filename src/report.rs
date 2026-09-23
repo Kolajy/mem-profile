@@ -1,7 +1,7 @@
 use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
 use inferno::flamegraph::{from_reader, Options};
-use num_format::{Locale, ToFormattedString};
+use num_format::{Buffer, Locale};
 use rustc_hash::FxHashMap;
 use std::fmt::Write as _;
 use std::fs::OpenOptions;
@@ -65,17 +65,22 @@ pub fn print_leak_report() {
         }
 
         print_header(is_tty);
+        let mut count_buf = Buffer::default();
+        count_buf.write_formatted(&raw_leaks.len(), &Locale::en);
+        let mut total_bytes_buf = Buffer::default();
+        total_bytes_buf.write_formatted(&total_bytes, &Locale::en);
+
         if is_tty {
             eprintln!(
                 "\x1b[1mDetected\x1b[0m \x1b[1;35m{}\x1b[0m \x1b[1munique leak stack(s) totaling\x1b[0m \x1b[1;35m{}\x1b[0m \x1b[1mbytes.\x1b[0m\n",
-                raw_leaks.len().to_formatted_string(&Locale::en),
-                total_bytes.to_formatted_string(&Locale::en)
+                count_buf.as_str(),
+                total_bytes_buf.as_str()
             );
         } else {
             eprintln!(
                 "Detected {} unique leak stack(s) totaling {} bytes.\n",
-                raw_leaks.len().to_formatted_string(&Locale::en),
-                total_bytes.to_formatted_string(&Locale::en)
+                count_buf.as_str(),
+                total_bytes_buf.as_str()
             );
         }
 
@@ -83,17 +88,22 @@ pub fn print_leak_report() {
         sorted_leaks.sort_unstable_by_key(|&(_, &size)| std::cmp::Reverse(size));
 
         for (i, (frames, size)) in sorted_leaks.into_iter().enumerate() {
+            let mut i_buf = Buffer::default();
+            i_buf.write_formatted(&(i + 1), &Locale::en);
+            let mut size_buf = Buffer::default();
+            size_buf.write_formatted(size, &Locale::en);
+
             if is_tty {
                 eprintln!(
                     "\x1b[1mLeak Stack {}:\x1b[0m \x1b[1;35m{}\x1b[0m \x1b[1mbytes\x1b[0m",
-                    (i + 1).to_formatted_string(&Locale::en),
-                    size.to_formatted_string(&Locale::en)
+                    i_buf.as_str(),
+                    size_buf.as_str()
                 );
             } else {
                 eprintln!(
                     "Leak Stack {}: {} bytes",
-                    (i + 1).to_formatted_string(&Locale::en),
-                    size.to_formatted_string(&Locale::en)
+                    i_buf.as_str(),
+                    size_buf.as_str()
                 );
             }
 

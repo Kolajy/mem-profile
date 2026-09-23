@@ -1,6 +1,6 @@
 use crate::allocator::REGISTRY;
 use crate::backtrace::symbolicate_frames;
-use num_format::{Locale, ToFormattedString};
+use num_format::{Buffer, Locale};
 use std::fs::OpenOptions;
 use std::io::{BufWriter, Write as _};
 #[cfg(unix)]
@@ -97,29 +97,33 @@ pub fn dump_to_file(path: &Path) {
     };
     let mut buf_writer = BufWriter::new(file);
 
+    let mut buf_allocs = Buffer::default();
+    buf_allocs.write_formatted(&total_alloc_count, &Locale::en);
+    let mut buf_bytes = Buffer::default();
+    buf_bytes.write_formatted(&total_bytes, &Locale::en);
+
     let _ = writeln!(buf_writer, "Memory Snapshot");
-    let _ = writeln!(
-        buf_writer,
-        "Total Allocations: {}",
-        total_alloc_count.to_formatted_string(&Locale::en)
-    );
-    let _ = writeln!(
-        buf_writer,
-        "Total Bytes: {}",
-        total_bytes.to_formatted_string(&Locale::en)
-    );
+    let _ = writeln!(buf_writer, "Total Allocations: {}", buf_allocs.as_str());
+    let _ = writeln!(buf_writer, "Total Bytes: {}", buf_bytes.as_str());
 
     // Bolt: Grouping allocations by unique backtraces avoids O(N) backtrace cloning and implicitly avoids expensive repeated symbolication.
     let mut sorted_allocations: Vec<_> = grouped_allocations.into_iter().collect();
     sorted_allocations.sort_unstable_by_key(|&(_, (size, _))| std::cmp::Reverse(size));
 
     for (i, (frames, (size, count))) in sorted_allocations.into_iter().enumerate() {
+        let mut i_buf = Buffer::default();
+        i_buf.write_formatted(&(i + 1), &Locale::en);
+        let mut size_buf = Buffer::default();
+        size_buf.write_formatted(&size, &Locale::en);
+        let mut count_buf = Buffer::default();
+        count_buf.write_formatted(&count, &Locale::en);
+
         let _ = writeln!(
             buf_writer,
             "\nAllocation Group {}: {} bytes ({} allocations)",
-            (i + 1).to_formatted_string(&Locale::en),
-            size.to_formatted_string(&Locale::en),
-            count.to_formatted_string(&Locale::en)
+            i_buf.as_str(),
+            size_buf.as_str(),
+            count_buf.as_str()
         );
 
         let symbols = symbolicate_frames(&frames);

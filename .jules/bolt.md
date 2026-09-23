@@ -142,3 +142,6 @@
 ## 2025-02-13 - Avoid to_formatted_string for high-frequency formatting
 **Learning:** Calling `.to_formatted_string()` on numeric types inside high-frequency functions dynamically allocates a short-lived heap `String`, imposing severe GC/allocator overhead when executed continually, such as during tight loops plotting TUI graphs.
 **Action:** Replace it with the underlying stack-allocated `num_format::Buffer::default()` structure, using `buf.write_formatted(...)` followed by `.as_str()`, enabling zero-allocation number formatting into macros like `format!` and `write!`.
+## 2025-02-13 - Zero-Allocation Number Formatting in Aggregation Reports
+**Learning:** Using `.to_formatted_string()` from the `num-format` crate inside aggregation loops (like snapshot diffing or memory leak reporting) dynamically allocates a short-lived heap `String` for every number formatted. While acceptable for a few calls, this imposes unnecessary allocator overhead when processing large memory snapshots containing hundreds of thousands of allocations.
+**Action:** Replace `.to_formatted_string()` with a stack-allocated `num_format::Buffer::default()`, use `buf.write_formatted(...)`, and pass the resulting `.as_str()` slice to macros like `println!` or `writeln!`. This achieves zero-allocation number formatting.
