@@ -41,3 +41,6 @@
 ## $(date +%Y-%m-%d) - Improve TUI Boilerplate Contrast
 **Learning:** Using `Color::DarkGray` for dim structural boilerplate text (like inactive keybinds or static labels) in TUIs can cause severe readability and accessibility regressions on standard dark terminal themes, rendering them nearly invisible.
 **Action:** Use `Color::Gray` instead of `Color::DarkGray` for dim boilerplate text to ensure sufficient contrast and legibility while maintaining the visual hierarchy against active content.
+## $(date +%Y-%m-%d) - Route CLI Warnings to Stderr
+**Learning:** Diagnostic messages and usage errors printed to `stdout` can corrupt piped output streams in CLI applications, leading to broken downstream automation workflows. Checking `std::io::stderr().is_terminal()` allows for correct conditional ANSI coloring on the standard error stream.
+**Action:** Always route warnings and error messages to `stderr` via `eprintln!` and verify terminal capabilities using the standard error handle rather than standard output.
