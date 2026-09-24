@@ -91,11 +91,12 @@ fn format_bytes(v: f64) -> String {
 
 fn draw_graph(data: &[f64], total_duration: f64) {
     let is_tty = std::io::stdout().is_terminal();
+    let is_tty_err = std::io::stderr().is_terminal();
     if data.is_empty() {
-        if is_tty {
-            println!("\n\x1b[33mi No memory data collected (process ran too fast).\x1b[0m");
+        if is_tty_err {
+            eprintln!("\n\x1b[33mi No memory data collected (process ran too fast).\x1b[0m");
         } else {
-            println!("\ni No memory data collected (process ran too fast).");
+            eprintln!("\ni No memory data collected (process ran too fast).");
         }
         return;
     }
@@ -219,7 +220,7 @@ fn draw_graph(data: &[f64], total_duration: f64) {
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        println!("Usage: mem-profile <command> [args...]");
+        eprintln!("Usage: mem-profile <command> [args...]");
         std::process::exit(1);
     }
 
@@ -229,7 +230,7 @@ fn main() {
     let mut child = match Command::new(cmd_name).args(cmd_args).spawn() {
         Ok(c) => c,
         Err(e) => {
-            println!("Error executing command: {}", e);
+            eprintln!("Error executing command: {}", e);
             std::process::exit(1);
         }
     };
