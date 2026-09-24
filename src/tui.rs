@@ -457,12 +457,9 @@ fn run_app<B: Backend>(
                             dump_to_file(Path::new(&name));
                             app_lock.last_snapshot_time = Some(Instant::now());
                             app_lock.snapshot_flash_buf.clear();
-                            use std::fmt::Write as _;
-                            let _ = write!(
-                                &mut app_lock.snapshot_flash_buf,
-                                " Snapshot saved to {}! ",
-                                name
-                            );
+                            app_lock.snapshot_flash_buf.push_str(" Snapshot saved to ");
+                            app_lock.snapshot_flash_buf.push_str(&name);
+                            app_lock.snapshot_flash_buf.push_str("! ");
                         }
                         KeyCode::Char('r') => {
                             app_lock.sort_by_size = !app_lock.sort_by_size;
@@ -592,7 +589,6 @@ fn get_active_allocations(
             }
         }
 
-        use std::fmt::Write;
         let mut i = 0;
         for (k, v) in folded.iter() {
             if i < result.len() {
@@ -604,14 +600,14 @@ fn get_active_allocations(
                 result[i].4.clear();
                 let mut buf = num_format::Buffer::default();
                 buf.write_formatted(&v.1, &num_format::Locale::en);
-                let _ = write!(result[i].4, "{}", buf.as_str());
+                result[i].4.push_str(buf.as_str());
             } else {
                 let mut size_str = String::with_capacity(32);
                 let _ = write_bytes(&mut size_str, v.0 as f64);
                 let mut count_str = String::with_capacity(32);
                 let mut buf = num_format::Buffer::default();
                 buf.write_formatted(&v.1, &num_format::Locale::en);
-                let _ = write!(count_str, "{}", buf.as_str());
+                count_str.push_str(buf.as_str());
                 result.push((Arc::clone(k), v.0, v.1, size_str, count_str));
             }
             i += 1;
@@ -785,12 +781,9 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 .unwrap_or_default()
                 .as_millis();
             let idx = (t / 100) as usize % spinner.len();
-            use std::fmt::Write as _;
-            let _ = write!(
-                &mut app.empty_msg_buf,
-                "{} Waiting for initial memory reading...",
-                spinner[idx]
-            );
+            app.empty_msg_buf.push_str(spinner[idx]);
+            app.empty_msg_buf
+                .push_str(" Waiting for initial memory reading...");
         }
         let info = ratatui::widgets::Paragraph::new(app.empty_msg_buf.as_str())
             .block(block)
@@ -970,7 +963,6 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
         "Active Allocations"
     };
 
-    use std::fmt::Write as _;
     app.title_buf.clear();
 
     // ⚡ Bolt: Use stack-allocated `num_format::Buffer` instead of `.to_formatted_string()`
@@ -981,22 +973,21 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     if let Some(selected) = app.table_state.selected() {
         let mut selected_buf = num_format::Buffer::default();
         selected_buf.write_formatted(&(selected + 1), &Locale::en);
-        let _ = write!(
-            &mut app.title_buf,
-            "{} ({} of {} items - Sorted by {})",
-            base_title,
-            selected_buf.as_str(),
-            items_len_buf.as_str(),
-            sort_label
-        );
+        app.title_buf.push_str(base_title);
+        app.title_buf.push_str(" (");
+        app.title_buf.push_str(selected_buf.as_str());
+        app.title_buf.push_str(" of ");
+        app.title_buf.push_str(items_len_buf.as_str());
+        app.title_buf.push_str(" items - Sorted by ");
+        app.title_buf.push_str(sort_label);
+        app.title_buf.push(')');
     } else {
-        let _ = write!(
-            &mut app.title_buf,
-            "{} ({} items - Sorted by {})",
-            base_title,
-            items_len_buf.as_str(),
-            sort_label
-        );
+        app.title_buf.push_str(base_title);
+        app.title_buf.push_str(" (");
+        app.title_buf.push_str(items_len_buf.as_str());
+        app.title_buf.push_str(" items - Sorted by ");
+        app.title_buf.push_str(sort_label);
+        app.title_buf.push(')');
     }
 
     let mut table_key_spans = vec![];
@@ -1035,12 +1026,9 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 .unwrap_or_default()
                 .as_millis();
             let idx = (t / 100) as usize % spinner.len();
-            use std::fmt::Write as _;
-            let _ = write!(
-                &mut app.empty_msg_buf,
-                "{} No allocations tracked. Waiting for data...",
-                spinner[idx]
-            );
+            app.empty_msg_buf.push_str(spinner[idx]);
+            app.empty_msg_buf
+                .push_str(" No allocations tracked. Waiting for data...");
             Style::default().fg(Color::Gray)
         };
         let empty_row = Row::new([Cell::from(app.empty_msg_buf.as_str())])
@@ -1110,10 +1098,13 @@ fn write_float_with_commas(w: &mut impl std::fmt::Write, val: f64) -> std::fmt::
     let mut buf = num_format::Buffer::default();
     if frac_part == 10 {
         buf.write_formatted(&(int_part + 1), &Locale::en);
-        write!(w, "{}.0", buf.as_str())
+        w.write_str(buf.as_str())?;
+        w.write_str(".0")
     } else {
         buf.write_formatted(&int_part, &Locale::en);
-        write!(w, "{}.{}", buf.as_str(), frac_part)
+        w.write_str(buf.as_str())?;
+        w.write_char('.')?;
+        w.write_char((b'0' + frac_part as u8) as char)
     }
 }
 
@@ -1121,15 +1112,16 @@ pub(crate) fn write_bytes(w: &mut impl std::fmt::Write, v: f64) -> std::fmt::Res
     if v < 1024.0 {
         let mut buf = num_format::Buffer::default();
         buf.write_formatted(&(v as u64), &Locale::en);
-        write!(w, "{} B", buf.as_str())
+        w.write_str(buf.as_str())?;
+        w.write_str(" B")
     } else if v < 1024.0 * 1024.0 {
         write_float_with_commas(w, v / 1024.0)?;
-        write!(w, " KB")
+        w.write_str(" KB")
     } else if v < 1024.0 * 1024.0 * 1024.0 {
         write_float_with_commas(w, v / (1024.0 * 1024.0))?;
-        write!(w, " MB")
+        w.write_str(" MB")
     } else {
         write_float_with_commas(w, v / (1024.0 * 1024.0 * 1024.0))?;
-        write!(w, " GB")
+        w.write_str(" GB")
     }
 }

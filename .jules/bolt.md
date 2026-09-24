@@ -145,3 +145,7 @@
 ## 2025-02-13 - Zero-Allocation Number Formatting in Aggregation Reports
 **Learning:** Using `.to_formatted_string()` from the `num-format` crate inside aggregation loops (like snapshot diffing or memory leak reporting) dynamically allocates a short-lived heap `String` for every number formatted. While acceptable for a few calls, this imposes unnecessary allocator overhead when processing large memory snapshots containing hundreds of thousands of allocations.
 **Action:** Replace `.to_formatted_string()` with a stack-allocated `num_format::Buffer::default()`, use `buf.write_formatted(...)`, and pass the resulting `.as_str()` slice to macros like `println!` or `writeln!`. This achieves zero-allocation number formatting.
+
+## 2023-11-20 - Avoid dynamic string allocation in high frequency `write!` calls
+**Learning:** Using `write!` macros in hot paths with strings triggers unneeded string formatting machinery overhead compared to directly interacting with strings. Specifically in loops or render functions, writing data to buffers via `write!` or generating strings instead of zero-allocation string mutation (like `.push_str`) impacts performance.
+**Action:** When you want to append static or zero-allocation formatted numeric strings to string buffers inside hot paths, replace `write!(buf, "{}", text)` with `buf.push_str(text)`. Also replace multiple static write parts with a sequence of `.push_str` or `.push` calls to avoid format string processing overhead.
