@@ -1,4 +1,4 @@
-use num_format::{Locale, ToFormattedString};
+use num_format::Locale;
 #[cfg(target_os = "linux")]
 use std::fs::File;
 #[cfg(target_os = "linux")]
@@ -173,11 +173,11 @@ pub fn execute(command: String, args: Vec<String>) {
     } else {
         (int_part, frac_part)
     };
-    let mb_str = format!(
-        "{}.{:02}",
-        int_part.to_formatted_string(&Locale::en),
-        frac_part
-    );
+    // ⚡ Bolt: Use stack-allocated `num_format::Buffer` instead of `.to_formatted_string()`
+    // to prevent intermediate dynamic `String` heap allocations during formatting.
+    let mut int_buf = num_format::Buffer::default();
+    int_buf.write_formatted(&int_part, &Locale::en);
+    let mb_str = format!("{}.{:02}", int_buf.as_str(), frac_part);
 
     use std::io::IsTerminal;
     let is_tty = std::io::stderr().is_terminal();
@@ -189,22 +189,23 @@ pub fn execute(command: String, args: Vec<String>) {
         format!("{} {}", command, args_str)
     };
 
+    // ⚡ Bolt: Use stack-allocated `num_format::Buffer` instead of `.to_formatted_string()`
+    // to prevent intermediate dynamic `String` heap allocations during formatting.
+    let mut peak_buf = num_format::Buffer::default();
+    peak_buf.write_formatted(&peak_rss_bytes_val, &Locale::en);
+
     if is_tty {
         eprintln!("\n\x1b[1;36m=== Memory Profile ===\x1b[0m");
         eprintln!("\x1b[1mCommand:\x1b[0m {}", cmd_str);
         eprintln!(
             "\x1b[1mPeak RSS:\x1b[0m \x1b[1;35m{} MB\x1b[0m ({} bytes)",
             mb_str,
-            peak_rss_bytes_val.to_formatted_string(&Locale::en)
+            peak_buf.as_str()
         );
     } else {
         eprintln!("\n=== Memory Profile ===");
         eprintln!("Command: {}", cmd_str);
-        eprintln!(
-            "Peak RSS: {} MB ({} bytes)",
-            mb_str,
-            peak_rss_bytes_val.to_formatted_string(&Locale::en)
-        );
+        eprintln!("Peak RSS: {} MB ({} bytes)", mb_str, peak_buf.as_str());
     }
 
     if !status.success() {

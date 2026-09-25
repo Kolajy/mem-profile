@@ -149,3 +149,7 @@
 ## 2023-11-20 - Avoid dynamic string allocation in high frequency `write!` calls
 **Learning:** Using `write!` macros in hot paths with strings triggers unneeded string formatting machinery overhead compared to directly interacting with strings. Specifically in loops or render functions, writing data to buffers via `write!` or generating strings instead of zero-allocation string mutation (like `.push_str`) impacts performance.
 **Action:** When you want to append static or zero-allocation formatted numeric strings to string buffers inside hot paths, replace `write!(buf, "{}", text)` with `buf.push_str(text)`. Also replace multiple static write parts with a sequence of `.push_str` or `.push` calls to avoid format string processing overhead.
+
+## 2025-03-09 - Avoid to_formatted_string in CLI Output
+**Learning:** Using `.to_formatted_string()` on numeric types inside high-frequency functions or CLI display sections dynamically allocates a short-lived heap `String`, imposing unneeded allocator overhead.
+**Action:** Replace `.to_formatted_string()` with a stack-allocated `num_format::Buffer::default()` structure, using `buf.write_formatted(...)` followed by `.as_str()`, enabling zero-allocation number formatting into macros like `format!` and `eprintln!`.
