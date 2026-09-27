@@ -825,13 +825,12 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             .style(Style::default().fg(Color::Cyan))
             .data(visible_data)];
 
-        use std::fmt::Write as _;
         app.min_time_buf.clear();
-        let _ = write!(&mut app.min_time_buf, "{:.1}", min_time);
+        let _ = write_float_with_commas(&mut app.min_time_buf, min_time);
         app.mid_time_buf.clear();
-        let _ = write!(&mut app.mid_time_buf, "{:.1}", (min_time + max_time) / 2.0);
+        let _ = write_float_with_commas(&mut app.mid_time_buf, (min_time + max_time) / 2.0);
         app.max_time_buf.clear();
-        let _ = write!(&mut app.max_time_buf, "{:.1}", max_time);
+        let _ = write_float_with_commas(&mut app.max_time_buf, max_time);
 
         app.half_max_bytes_buf.clear();
         let _ = write_bytes(&mut app.half_max_bytes_buf, max_bytes / 2.0);
