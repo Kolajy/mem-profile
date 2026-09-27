@@ -787,7 +787,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
         }
         let info = ratatui::widgets::Paragraph::new(app.empty_msg_buf.as_str())
             .block(block)
-            .style(Style::default().fg(Color::Gray))
+            .style(border_style)
             .alignment(ratatui::layout::Alignment::Center);
         f.render_widget(info, chunks[1]);
     } else {
@@ -1029,7 +1029,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             app.empty_msg_buf.push_str(spinner[idx]);
             app.empty_msg_buf
                 .push_str(" No allocations tracked. Waiting for data...");
-            Style::default().fg(Color::Gray)
+            border_style
         };
         let empty_row = Row::new([Cell::from(app.empty_msg_buf.as_str())])
             .style(style)
