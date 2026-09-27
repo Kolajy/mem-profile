@@ -44,3 +44,6 @@
 ## $(date +%Y-%m-%d) - Route CLI Warnings to Stderr
 **Learning:** Diagnostic messages and usage errors printed to `stdout` can corrupt piped output streams in CLI applications, leading to broken downstream automation workflows. Checking `std::io::stderr().is_terminal()` allows for correct conditional ANSI coloring on the standard error stream.
 **Action:** Always route warnings and error messages to `stderr` via `eprintln!` and verify terminal capabilities using the standard error handle rather than standard output.
+## 2024-11-20 - TUI Accessibility & State Cohesion
+**Learning:** In TUI applications built with ratatui, ensuring cohesive visual state indication is critical. Aligning the semantic color of structural elements (like dynamic borders) with their corresponding state text (e.g., using `Color::Green` for both the border and `[RUNNING]` text) provides crucial at-a-glance status cues, avoiding mismatched combinations with dim boilerplate colors.
+**Action:** When updating TUI state indicators, ensure the border style explicitly matches the color of the state text being rendered.
