@@ -50,3 +50,6 @@
 ## 2025-03-09 - Cohesive Error Guidance
 **Learning:** Generic fallback states (like "No memory data collected") can feel like error messages to users when they are actually expected outcomes for edge cases (e.g., short-lived processes). Matching fallback text to interactive CLI equivalents and adding subtle iconography (like an info icon) provides reassuring, actionable guidance and reduces cognitive friction.
 **Action:** Always explain *why* an empty state occurred if it could be confused with a failure, and coordinate the language between CLI outputs and rich TUI outputs to ensure consistent user onboarding.
+## 2024-05-14 - Empty state icons
+**Learning:** Found that when there is no memory data collected in CLI (because the process ran too fast), the message uses a plain 'i' icon: `i No memory data collected`. This does not match the TUI output which uses `ℹ`. Memory context instructed me: "Coordinate language between CLI and TUI outputs and use subtle iconography to reduce cognitive friction and provide actionable guidance."
+**Action:** Replace `i` with `ℹ` in `src/main.rs`.
