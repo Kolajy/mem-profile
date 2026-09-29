@@ -153,3 +153,6 @@
 ## 2025-03-09 - Avoid to_formatted_string in CLI Output
 **Learning:** Using `.to_formatted_string()` on numeric types inside high-frequency functions or CLI display sections dynamically allocates a short-lived heap `String`, imposing unneeded allocator overhead.
 **Action:** Replace `.to_formatted_string()` with a stack-allocated `num_format::Buffer::default()` structure, using `buf.write_formatted(...)` followed by `.as_str()`, enabling zero-allocation number formatting into macros like `format!` and `eprintln!`.
+## 2025-03-09 - Avoid string allocation during numeric formatting in loops
+**Learning:** Using `format!` combined with `.to_formatted_string()` or returning newly allocated `String`s when rendering dynamic labels (like graph tick marks) repeatedly allocates heap memory, placing stress on the allocator.
+**Action:** Replace string-returning functions with functions taking a `&mut impl std::fmt::Write` argument. Use `Buffer::write_formatted` and write the result into a reusable buffer allocated prior to the loop.
