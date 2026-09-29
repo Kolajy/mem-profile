@@ -773,7 +773,8 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             .border_style(border_style);
         app.empty_msg_buf.clear();
         if app.process_exited {
-            app.empty_msg_buf.push_str("No memory data collected.");
+            app.empty_msg_buf
+                .push_str("ℹ No memory data collected (process ran too fast).");
         } else {
             let spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
             let t = std::time::SystemTime::now()
