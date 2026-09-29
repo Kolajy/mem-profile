@@ -54,7 +54,7 @@ fn get_rss(statm_path: &str, page_size: u64, statm_file: &mut Option<File>) -> O
     None
 }
 
-fn format_float_with_commas(val: f64) -> String {
+fn write_float_with_commas(w: &mut impl std::fmt::Write, val: f64) -> std::fmt::Result {
     let int_part = val.trunc() as u64;
     let frac_part = (val.fract() * 10.0).round() as u64;
 
@@ -63,30 +63,43 @@ fn format_float_with_commas(val: f64) -> String {
     let mut buf = num_format::Buffer::default();
     if frac_part == 10 {
         buf.write_formatted(&(int_part + 1), &Locale::en);
-        format!("{}.0", buf.as_str())
+        w.write_str(buf.as_str())?;
+        w.write_str(".0")
     } else {
         buf.write_formatted(&int_part, &Locale::en);
-        format!("{}.{}", buf.as_str(), frac_part)
+        w.write_str(buf.as_str())?;
+        w.write_char('.')?;
+        w.write_char((b'0' + frac_part as u8) as char)
     }
 }
 
-fn format_bytes(v: f64) -> String {
+// ⚡ Bolt: Provide a zero-allocation `write_bytes` function taking a `&mut impl std::fmt::Write`.
+// This eliminates intermediate `String` heap allocations inside high-frequency formatting loops.
+fn write_bytes(w: &mut impl std::fmt::Write, v: f64) -> std::fmt::Result {
     if v < 1024.0 {
         // ⚡ Bolt: Use stack-allocated `num_format::Buffer` instead of `.to_formatted_string()`
         // to prevent intermediate dynamic `String` heap allocations during formatting.
         let mut buf = num_format::Buffer::default();
         buf.write_formatted(&(v as u64), &Locale::en);
-        format!("{} B", buf.as_str())
+        w.write_str(buf.as_str())?;
+        w.write_str(" B")
     } else if v < 1024.0 * 1024.0 {
-        format!("{} KB", format_float_with_commas(v / 1024.0))
+        write_float_with_commas(w, v / 1024.0)?;
+        w.write_str(" KB")
     } else if v < 1024.0 * 1024.0 * 1024.0 {
-        format!("{} MB", format_float_with_commas(v / (1024.0 * 1024.0)))
+        write_float_with_commas(w, v / (1024.0 * 1024.0))?;
+        w.write_str(" MB")
     } else {
-        format!(
-            "{} GB",
-            format_float_with_commas(v / (1024.0 * 1024.0 * 1024.0))
-        )
+        write_float_with_commas(w, v / (1024.0 * 1024.0 * 1024.0))?;
+        w.write_str(" GB")
     }
+}
+
+#[cfg(test)]
+fn format_bytes(v: f64) -> String {
+    let mut s = String::with_capacity(16);
+    let _ = write_bytes(&mut s, v);
+    s
 }
 
 fn draw_graph(data: &[f64], total_duration: f64) {
@@ -158,9 +171,17 @@ fn draw_graph(data: &[f64], total_duration: f64) {
         println!("\x1b[1;36mMemory Usage (RSS) Timeline\x1b[0m");
         println!("\x1b[1;36m{}\x1b[0m", "=".repeat(80));
 
+        // ⚡ Bolt: Use a custom `Display` struct to completely eliminate the final `format!`
+        // heap allocation when right-aligning the byte string for the chart axis.
+        struct ByteFormat(f64);
+        impl std::fmt::Display for ByteFormat {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write_bytes(f, self.0)
+            }
+        }
+
         for (r, row) in grid.iter().enumerate().take(height) {
             let val = max_v - (range_v * r as f64 / (height - 1) as f64);
-            let label = format!("{:>10}", format_bytes(val));
             let mut row_str = String::with_capacity(row.len() * 10);
             for &c in row {
                 if c == '*' {
@@ -171,7 +192,11 @@ fn draw_graph(data: &[f64], total_duration: f64) {
                     row_str.push(c);
                 }
             }
-            println!("\x1b[1;35m{}\x1b[0m \x1b[90m|\x1b[0m {}", label, row_str);
+            println!(
+                "\x1b[1;35m{:>10}\x1b[0m \x1b[90m|\x1b[0m {}",
+                ByteFormat(val),
+                row_str
+            );
         }
         println!(
             "{} \x1b[90m+{}\x1b[0m",
@@ -195,11 +220,19 @@ fn draw_graph(data: &[f64], total_duration: f64) {
         println!("Memory Usage (RSS) Timeline");
         println!("{}", "=".repeat(80));
 
+        // ⚡ Bolt: Use a custom `Display` struct to completely eliminate the final `format!`
+        // heap allocation when right-aligning the byte string for the chart axis.
+        struct ByteFormat(f64);
+        impl std::fmt::Display for ByteFormat {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write_bytes(f, self.0)
+            }
+        }
+
         for (r, row) in grid.iter().enumerate().take(height) {
             let val = max_v - (range_v * r as f64 / (height - 1) as f64);
-            let label = format!("{:>10}", format_bytes(val));
             let row_str: String = row.iter().collect();
-            println!("{} | {}", label, row_str);
+            println!("{:>10} | {}", ByteFormat(val), row_str);
         }
         println!("{} +{}", " ".repeat(11), "-".repeat(display_data.len()));
 
