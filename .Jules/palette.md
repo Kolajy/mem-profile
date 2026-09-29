@@ -32,18 +32,21 @@
 ## 2025-03-09 - Cross-Target Visual Consistency
 **Learning:** Ratatui Charts with unstyled (Span::raw) labels can look like dense walls of text, similar to unstyled ASCII charts. When an application supports multiple rendering targets (e.g. interactive CLI and rich TUI), maintaining consistent semantic color mapping across them (e.g. green for time, magenta for bytes) reduces cognitive load as users switch between modes.
 **Action:** Always apply explicit, targeted styles (like `Span::styled`) to TUI chart labels and axes, ensuring the chosen colors match the semantic colors used in the application's interactive CLI equivalents.
-## $(date +%Y-%m-%d) - Color-code memory chart axes
+## 2025-03-09 - Color-code memory chart axes
 **Learning:** In TUI applications built with `ratatui` that also feature CLI equivalents, maintain consistent semantic color mapping across rendering targets to reduce cognitive load. Always apply explicit styles (e.g., `Span::styled`) to TUI chart labels and axes, ensuring their colors match the semantic colors used in the CLI output (e.g., green for time, magenta for bytes) rather than leaving them unstyled or default gray.
 **Action:** Always verify color mapping matches standard palette.
-## $(date +%Y-%m-%d) - Explicit Check Before Patching
+## 2025-03-09 - Explicit Check Before Patching
 **Learning:** When testing code modifications directly via shell commands (like using `sed`) prior to finalizing an execution plan, ensure you revert those changes (e.g., using `git restore <file>`) before executing `replace_with_git_merge_diff`. Failing to do so causes the `SEARCH` block to fail because the target file already contains the modified state.
 **Action:** Before executing `replace_with_git_merge_diff`, run `git status` or `git diff` to confirm the target file is in the expected initial state. If modified, use `git restore <file>` to revert it so the SEARCH block matches perfectly.
-## $(date +%Y-%m-%d) - Improve TUI Boilerplate Contrast
+## 2025-03-09 - Improve TUI Boilerplate Contrast
 **Learning:** Using `Color::DarkGray` for dim structural boilerplate text (like inactive keybinds or static labels) in TUIs can cause severe readability and accessibility regressions on standard dark terminal themes, rendering them nearly invisible.
 **Action:** Use `Color::Gray` instead of `Color::DarkGray` for dim boilerplate text to ensure sufficient contrast and legibility while maintaining the visual hierarchy against active content.
-## $(date +%Y-%m-%d) - Route CLI Warnings to Stderr
+## 2025-03-09 - Route CLI Warnings to Stderr
 **Learning:** Diagnostic messages and usage errors printed to `stdout` can corrupt piped output streams in CLI applications, leading to broken downstream automation workflows. Checking `std::io::stderr().is_terminal()` allows for correct conditional ANSI coloring on the standard error stream.
 **Action:** Always route warnings and error messages to `stderr` via `eprintln!` and verify terminal capabilities using the standard error handle rather than standard output.
 ## 2024-11-20 - TUI Accessibility & State Cohesion
 **Learning:** In TUI applications built with ratatui, ensuring cohesive visual state indication is critical. Aligning the semantic color of structural elements (like dynamic borders) with their corresponding state text (e.g., using `Color::Green` for both the border and `[RUNNING]` text) provides crucial at-a-glance status cues, avoiding mismatched combinations with dim boilerplate colors.
 **Action:** When updating TUI state indicators, ensure the border style explicitly matches the color of the state text being rendered.
+## 2025-03-09 - Cohesive Error Guidance
+**Learning:** Generic fallback states (like "No memory data collected") can feel like error messages to users when they are actually expected outcomes for edge cases (e.g., short-lived processes). Matching fallback text to interactive CLI equivalents and adding subtle iconography (like an info icon) provides reassuring, actionable guidance and reduces cognitive friction.
+**Action:** Always explain *why* an empty state occurred if it could be confused with a failure, and coordinate the language between CLI outputs and rich TUI outputs to ensure consistent user onboarding.
