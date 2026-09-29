@@ -94,9 +94,9 @@ fn draw_graph(data: &[f64], total_duration: f64) {
     let is_tty_err = std::io::stderr().is_terminal();
     if data.is_empty() {
         if is_tty_err {
-            eprintln!("\n\x1b[33mi No memory data collected (process ran too fast).\x1b[0m");
+            eprintln!("\n\x1b[33mℹ No memory data collected (process ran too fast).\x1b[0m");
         } else {
-            eprintln!("\ni No memory data collected (process ran too fast).");
+            eprintln!("\nℹ No memory data collected (process ran too fast).");
         }
         return;
     }
