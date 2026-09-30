@@ -149,23 +149,35 @@ fn format_signed_diff(diff: isize, is_tty: bool) -> String {
     buf.write_formatted(&diff.unsigned_abs(), &Locale::en);
     let formatted = buf.as_str();
 
+    // ⚡ Bolt: Replace `format!` macros with `String::with_capacity` and `.push_str()`
+    // to prevent unneeded string formatting machinery overhead inside hot reporting loops.
+    let mut out = String::with_capacity(formatted.len() + 15);
     if is_tty {
         if diff > 0 {
-            format!("\x1b[31m+{}\x1b[0m", formatted)
+            out.push_str("\x1b[31m+");
+            out.push_str(formatted);
+            out.push_str("\x1b[0m");
         } else if diff < 0 {
-            format!("\x1b[32m-{}\x1b[0m", formatted)
+            out.push_str("\x1b[32m-");
+            out.push_str(formatted);
+            out.push_str("\x1b[0m");
         } else {
-            format!("\x1b[90m{}\x1b[0m", formatted)
+            out.push_str("\x1b[90m");
+            out.push_str(formatted);
+            out.push_str("\x1b[0m");
         }
     } else {
         if diff > 0 {
-            format!("+{}", formatted)
+            out.push('+');
+            out.push_str(formatted);
         } else if diff < 0 {
-            format!("-{}", formatted)
+            out.push('-');
+            out.push_str(formatted);
         } else {
-            formatted.to_string()
+            out.push_str(formatted);
         }
     }
+    out
 }
 
 pub fn diff_snapshots(path1: &str, path2: &str) {
