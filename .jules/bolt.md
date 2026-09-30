@@ -156,3 +156,6 @@
 ## 2025-03-09 - Avoid string allocation during numeric formatting in loops
 **Learning:** Using `format!` combined with `.to_formatted_string()` or returning newly allocated `String`s when rendering dynamic labels (like graph tick marks) repeatedly allocates heap memory, placing stress on the allocator.
 **Action:** Replace string-returning functions with functions taking a `&mut impl std::fmt::Write` argument. Use `Buffer::write_formatted` and write the result into a reusable buffer allocated prior to the loop.
+## 2025-03-09 - Avoid string allocation during CLI diff rendering
+**Learning:** Using `format!` in hot paths, such as loops generating colorized text output for file diffs, triggers dynamic `String` allocations because of Rust's formatting machinery, degrading performance on very large reports.
+**Action:** Replace `format!` macros inside text generation hot paths with `String::with_capacity` combined with `.push_str()` when possible to achieve zero-allocation bulk string operations.
