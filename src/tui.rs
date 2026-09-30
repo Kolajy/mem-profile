@@ -936,7 +936,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
 
     // Bolt: Zero-allocation optimization: Use array instead of vec! to prevent heap allocations for table headers every render tick.
     let header_cells = [
-        Cell::from("Backtrace (leaf <- root)").style(
+        Cell::from("Backtrace (leaf <- root) ").style(
             Style::default()
                 .fg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
@@ -1028,7 +1028,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             let idx = (t / 100) as usize % spinner.len();
             app.empty_msg_buf.push_str(spinner[idx]);
             app.empty_msg_buf
-                .push_str(" No allocations tracked. Waiting for data...");
+                .push_str(" ℹ No allocations tracked. Waiting for data...");
             border_style
         };
         let empty_row = Row::new([Cell::from(app.empty_msg_buf.as_str())])
