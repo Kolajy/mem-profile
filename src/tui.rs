@@ -457,7 +457,9 @@ fn run_app<B: Backend>(
                             dump_to_file(Path::new(&name));
                             app_lock.last_snapshot_time = Some(Instant::now());
                             app_lock.snapshot_flash_buf.clear();
-                            app_lock.snapshot_flash_buf.push_str(" Snapshot saved to ");
+                            app_lock
+                                .snapshot_flash_buf
+                                .push_str(" ✓ Snapshot saved to ");
                             app_lock.snapshot_flash_buf.push_str(&name);
                             app_lock.snapshot_flash_buf.push_str("! ");
                         }
@@ -647,7 +649,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     let (status_span, border_style) = if app.process_exited {
         (
             Span::styled(
-                " [PROCESS EXITED] ",
+                " [■ PROCESS EXITED] ",
                 Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
             ),
             Style::default().fg(Color::Red),
@@ -655,7 +657,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     } else if app.is_paused {
         (
             Span::styled(
-                " [PAUSED] ",
+                " [⏸ PAUSED] ",
                 Style::default()
                     .fg(Color::Yellow)
                     .add_modifier(Modifier::BOLD),
@@ -665,7 +667,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     } else {
         (
             Span::styled(
-                " [RUNNING] ",
+                " [▶ RUNNING] ",
                 Style::default()
                     .fg(Color::Green)
                     .add_modifier(Modifier::BOLD),
@@ -698,9 +700,9 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             top_key_spans.push(Span::styled("[p/Space]", key_style));
             top_key_spans.push(Span::styled(
                 if app.is_paused {
-                    " resume, "
+                    " ▶ resume, "
                 } else {
-                    " pause, "
+                    " ⏸ pause, "
                 },
                 dim_style,
             ));
