@@ -53,3 +53,6 @@
 ## 2025-03-09 - Empty state icons consistency
 **Learning:** Empty states in TUIs without icons can be overlooked. In TUI empty states ("No allocations tracked"), prepending a subtle `ℹ` icon improves visual scannability and provides actionable guidance, keeping it consistent with the success empty states (which have a `✓`).
 **Action:** Add `ℹ` to empty states without an icon.
+## 2025-03-09 - TUI Status Indicators Scannability
+**Learning:** In TUI applications, textual state indicators like `[RUNNING]` or `[PAUSED]` can lack immediate visual distinction, even with colors. Adding universally understood Unicode symbols (e.g., `▶`, `⏸`, `■`) alongside the text significantly improves at-a-glance scannability and provides actionable guidance, reducing cognitive friction for interactive users.
+**Action:** When designing TUI status badges or interactive key hints, prepend the text with appropriate Unicode icons (e.g., `[▶ RUNNING]`, `⏸ pause`) to enhance visual hierarchy and scannability.
