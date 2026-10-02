@@ -10,17 +10,23 @@ pub struct SymbolInfo {
 
 impl std::fmt::Display for SymbolInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // ⚡ Bolt: Zero-allocation optimization: Write directly to the `Formatter` stream
+        // using sequential `write!` calls instead of eagerly allocating intermediate `String`s
+        // (like `.to_string()` or `.into_owned()`). This completely eliminates up to four
+        // heap allocations per stack frame when generating memory profiles and flamegraphs.
         let name = self.name.as_deref().unwrap_or("<unknown>");
-        let file = self
-            .filename
-            .as_ref()
-            .map(|p| p.to_string_lossy().into_owned())
-            .unwrap_or_else(|| "<unknown>".to_string());
-        let line = self
-            .lineno
-            .map(|l| l.to_string())
-            .unwrap_or_else(|| "??".to_string());
-        write!(f, "{name} at {file}:{line}")
+        write!(f, "{} at ", name)?;
+        if let Some(ref filename) = self.filename {
+            write!(f, "{}", filename.display())?;
+        } else {
+            write!(f, "<unknown>")?;
+        }
+        write!(f, ":")?;
+        if let Some(lineno) = self.lineno {
+            write!(f, "{}", lineno)
+        } else {
+            write!(f, "??")
+        }
     }
 }
 

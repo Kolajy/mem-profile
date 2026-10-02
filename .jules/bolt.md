@@ -159,3 +159,6 @@
 ## 2025-03-09 - Avoid string allocation during CLI diff rendering
 **Learning:** Using `format!` in hot paths, such as loops generating colorized text output for file diffs, triggers dynamic `String` allocations because of Rust's formatting machinery, degrading performance on very large reports.
 **Action:** Replace `format!` macros inside text generation hot paths with `String::with_capacity` combined with `.push_str()` when possible to achieve zero-allocation bulk string operations.
+## 2025-05-18 - Zero-Allocation Display Implementations
+**Learning:** In Rust, implementing `std::fmt::Display` by eagerly allocating intermediate strings (e.g., using `.to_string()` or `.into_owned()`) just to format them into the final output causes severe heap churn in hot paths, such as symbol reporting or stack formatting.
+**Action:** Always write directly to the `std::fmt::Formatter` stream using sequential `write!` calls or `.display()` on paths instead of eagerly allocating intermediate `String` variables.
