@@ -786,7 +786,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             let idx = (t / 100) as usize % spinner.len();
             app.empty_msg_buf.push_str(spinner[idx]);
             app.empty_msg_buf
-                .push_str(" Waiting for initial memory reading...");
+                .push_str(" ℹ Waiting for initial memory reading...");
         }
         let info = ratatui::widgets::Paragraph::new(app.empty_msg_buf.as_str())
             .block(block)
