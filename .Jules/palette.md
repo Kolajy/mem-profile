@@ -56,3 +56,9 @@
 ## 2025-03-09 - TUI Status Indicators Scannability
 **Learning:** In TUI applications, textual state indicators like `[RUNNING]` or `[PAUSED]` can lack immediate visual distinction, even with colors. Adding universally understood Unicode symbols (e.g., `▶`, `⏸`, `■`) alongside the text significantly improves at-a-glance scannability and provides actionable guidance, reducing cognitive friction for interactive users.
 **Action:** When designing TUI status badges or interactive key hints, prepend the text with appropriate Unicode icons (e.g., `[▶ RUNNING]`, `⏸ pause`) to enhance visual hierarchy and scannability.
+## 2025-03-09 - Remove Duplicate Keybinds
+**Learning:** In TUI applications, redundantly duplicating keybind hints across multiple layout blocks causes visual clutter.
+**Action:** Contextually separate them by placing global application commands in the primary block's footer and widget-specific controls in the relevant widget's footer. Conditionally hide widget-specific controls when inapplicable.
+## 2025-03-09 - Keybind Hints Scannability
+**Learning:** In TUI applications, blended bracketed keybind hints like `[s]napshot` look like a typo or are hard to quickly scan.
+**Action:** Use distinct spacing and universally understood Unicode icons (e.g., `[s] 📸 snapshot`) to make them more scannable and intuitive.

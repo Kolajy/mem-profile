@@ -709,9 +709,9 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
         }
         top_key_spans.extend(vec![
             Span::styled("[s]", key_style),
-            Span::styled("napshot, ", dim_style),
+            Span::styled(" 📸 snapshot, ", dim_style),
             Span::styled("[q]", key_style),
-            Span::styled("uit ", dim_style),
+            Span::styled(" ✕ quit ", dim_style),
         ]);
     }
 
@@ -997,9 +997,9 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
         table_key_spans.push(Span::styled(" Keys: ", dim_style));
         table_key_spans.extend(vec![
             Span::styled("[r]", key_style),
-            Span::styled("e-sort, ", dim_style),
+            Span::styled(" ⇅ sort, ", dim_style),
             Span::styled("[↑/↓/j/k/Pg/Home/End]", key_style),
-            Span::styled(" nav ", dim_style),
+            Span::styled(" ⇡⇣ nav ", dim_style),
         ]);
     }
 
