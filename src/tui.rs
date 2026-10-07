@@ -1040,7 +1040,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             .header(header)
             .block(table_block)
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-            .highlight_symbol(">> ")
+            .highlight_symbol("▶ ")
             .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
         f.render_stateful_widget(table, chunks[2], &mut app.table_state);
     } else {
@@ -1068,7 +1068,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
             .header(header)
             .block(table_block)
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-            .highlight_symbol(">> ")
+            .highlight_symbol("▶ ")
             .highlight_spacing(ratatui::widgets::HighlightSpacing::Always);
         f.render_stateful_widget(table, chunks[2], &mut app.table_state);
     }
