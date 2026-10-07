@@ -62,3 +62,6 @@
 ## 2025-03-09 - Keybind Hints Scannability
 **Learning:** In TUI applications, blended bracketed keybind hints like `[s]napshot` look like a typo or are hard to quickly scan.
 **Action:** Use distinct spacing and universally understood Unicode icons (e.g., `[s] 📸 snapshot`) to make them more scannable and intuitive.
+## 2025-03-09 - Unicode Symbols for TUI Selection Indicators
+**Learning:** In TUI tables built with ratatui, ASCII character sequences like `>> ` used for selection/focus indicators can look unpolished and slightly harder to quickly parse than dedicated visual markers.
+**Action:** Replace ASCII character selection sequences with clean, visually distinct Unicode symbols like `▶ ` to improve visual polish, scannability, and align with modern UI standards.
