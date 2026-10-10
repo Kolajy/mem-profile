@@ -162,3 +162,6 @@
 ## 2025-05-18 - Zero-Allocation Display Implementations
 **Learning:** In Rust, implementing `std::fmt::Display` by eagerly allocating intermediate strings (e.g., using `.to_string()` or `.into_owned()`) just to format them into the final output causes severe heap churn in hot paths, such as symbol reporting or stack formatting.
 **Action:** Always write directly to the `std::fmt::Formatter` stream using sequential `write!` calls or `.display()` on paths instead of eagerly allocating intermediate `String` variables.
+## 2025-05-18 - Optimize Iterator Extending
+**Learning:** In Rust code, especially in high-frequency UI render loops, avoid wrapping temporary collections of items in `vec![...]` when passing them to functions like `.extend()` or standard iterators, as this forces unnecessary heap allocations.
+**Action:** Pass them as fixed-size arrays (`[...]`) instead to completely bypass the allocator.
