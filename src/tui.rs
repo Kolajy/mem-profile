@@ -995,7 +995,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
     let mut table_key_spans = vec![];
     if !show_flash && !items.is_empty() {
         table_key_spans.push(Span::styled(" Keys: ", dim_style));
-        table_key_spans.extend(vec![
+        table_key_spans.extend([
             Span::styled("[r]", key_style),
             Span::styled(" ⇅ sort, ", dim_style),
             Span::styled("[↑/↓/j/k/Pg/Home/End]", key_style),

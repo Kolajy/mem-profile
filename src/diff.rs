@@ -144,40 +144,43 @@ fn read_securely(path: &str) -> std::io::Result<String> {
     Ok(content)
 }
 
-fn format_signed_diff(diff: isize, is_tty: bool) -> String {
-    let mut buf = Buffer::default();
-    buf.write_formatted(&diff.unsigned_abs(), &Locale::en);
-    let formatted = buf.as_str();
+struct SignedDiffFormat {
+    diff: isize,
+    is_tty: bool,
+}
 
-    // ⚡ Bolt: Replace `format!` macros with `String::with_capacity` and `.push_str()`
-    // to prevent unneeded string formatting machinery overhead inside hot reporting loops.
-    let mut out = String::with_capacity(formatted.len() + 15);
-    if is_tty {
-        if diff > 0 {
-            out.push_str("\x1b[31m+");
-            out.push_str(formatted);
-            out.push_str("\x1b[0m");
-        } else if diff < 0 {
-            out.push_str("\x1b[32m-");
-            out.push_str(formatted);
-            out.push_str("\x1b[0m");
+impl std::fmt::Display for SignedDiffFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut buf = Buffer::default();
+        buf.write_formatted(&self.diff.unsigned_abs(), &Locale::en);
+        let formatted = buf.as_str();
+
+        if self.is_tty {
+            if self.diff > 0 {
+                f.write_str("\x1b[31m+")?;
+                f.write_str(formatted)?;
+                f.write_str("\x1b[0m")
+            } else if self.diff < 0 {
+                f.write_str("\x1b[32m-")?;
+                f.write_str(formatted)?;
+                f.write_str("\x1b[0m")
+            } else {
+                f.write_str("\x1b[90m")?;
+                f.write_str(formatted)?;
+                f.write_str("\x1b[0m")
+            }
         } else {
-            out.push_str("\x1b[90m");
-            out.push_str(formatted);
-            out.push_str("\x1b[0m");
-        }
-    } else {
-        if diff > 0 {
-            out.push('+');
-            out.push_str(formatted);
-        } else if diff < 0 {
-            out.push('-');
-            out.push_str(formatted);
-        } else {
-            out.push_str(formatted);
+            if self.diff > 0 {
+                f.write_str("+")?;
+                f.write_str(formatted)
+            } else if self.diff < 0 {
+                f.write_str("-")?;
+                f.write_str(formatted)
+            } else {
+                f.write_str(formatted)
+            }
         }
     }
-    out
 }
 
 pub fn diff_snapshots(path1: &str, path2: &str) {
@@ -267,15 +270,27 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
                 println!("  \x1b[1mStack:\x1b[0m \x1b[33m{}\x1b[0m", stack);
                 println!(
                     "    \x1b[1mSize Diff:\x1b[0m {} bytes, \x1b[1mCount Diff:\x1b[0m {}",
-                    format_signed_diff(size_diff, is_tty),
-                    format_signed_diff(count_diff, is_tty)
+                    SignedDiffFormat {
+                        diff: size_diff,
+                        is_tty
+                    },
+                    SignedDiffFormat {
+                        diff: count_diff,
+                        is_tty
+                    }
                 );
             } else {
                 println!("  Stack: {}", stack);
                 println!(
                     "    Size Diff: {} bytes, Count Diff: {}",
-                    format_signed_diff(size_diff, is_tty),
-                    format_signed_diff(count_diff, is_tty)
+                    SignedDiffFormat {
+                        diff: size_diff,
+                        is_tty
+                    },
+                    SignedDiffFormat {
+                        diff: count_diff,
+                        is_tty
+                    }
                 );
             }
         }
