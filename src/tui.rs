@@ -707,7 +707,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 dim_style,
             ));
         }
-        top_key_spans.extend(vec![
+        top_key_spans.extend([
             Span::styled("[s]", key_style),
             Span::styled(" 📸 snapshot, ", dim_style),
             Span::styled("[q]", key_style),

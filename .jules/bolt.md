@@ -165,3 +165,6 @@
 ## 2025-05-18 - Optimize Iterator Extending
 **Learning:** In Rust code, especially in high-frequency UI render loops, avoid wrapping temporary collections of items in `vec![...]` when passing them to functions like `.extend()` or standard iterators, as this forces unnecessary heap allocations.
 **Action:** Pass them as fixed-size arrays (`[...]`) instead to completely bypass the allocator.
+## 2026-10-13 - Avoid Array literals in Line/Chart constructors in Ratatui v0.26
+**Learning:** In Ratatui v0.26, methods like `Chart::new` explicitly require a `Vec<Dataset>` and `Line::from` is not implemented for `[Span; N]`. Attempting to eliminate `vec![]` allocations by replacing them with fixed-size arrays `[...]` in these constructors leads to compilation errors (`mismatched types` or `trait bound not satisfied`).
+**Action:** When working in Ratatui v0.26, only replace `vec![]` with fixed-size arrays `[...]` when passing them to functions that accept `IntoIterator` (e.g., `Vec::extend()`, `Axis::labels()`). Avoid applying this to `Chart::new` or `Line::from` unless explicitly calling `.to_vec()` or upgrading the crate version.
