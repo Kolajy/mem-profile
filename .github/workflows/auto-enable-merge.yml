@@ -13,6 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Enable Auto-Merge
-        run: gh pr merge --auto --merge "${{ github.event.pull_request.html_url }}"
+        run: gh pr merge --auto --merge "${{ github.event.pull_request.html_url }}" || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
