@@ -168,3 +168,7 @@
 ## 2026-10-13 - Avoid Array literals in Line/Chart constructors in Ratatui v0.26
 **Learning:** In Ratatui v0.26, methods like `Chart::new` explicitly require a `Vec<Dataset>` and `Line::from` is not implemented for `[Span; N]`. Attempting to eliminate `vec![]` allocations by replacing them with fixed-size arrays `[...]` in these constructors leads to compilation errors (`mismatched types` or `trait bound not satisfied`).
 **Action:** When working in Ratatui v0.26, only replace `vec![]` with fixed-size arrays `[...]` when passing them to functions that accept `IntoIterator` (e.g., `Vec::extend()`, `Axis::labels()`). Avoid applying this to `Chart::new` or `Line::from` unless explicitly calling `.to_vec()` or upgrading the crate version.
+
+## 2026-10-18 - Avoid String Generation for Formatted Row Iteration
+**Learning:** Generating intermediate heap `String` allocations inside graph plotting loops (e.g. collecting a `Vec<char>` row to print using `println!("{}", row_str)`) forces severe dynamic allocation pressure when processing rendering loops.
+**Action:** Replace `String` collection with a custom wrapper struct implementing `std::fmt::Display` (e.g. `struct RowFormat<'a>(&'a [char])`). Inside `fmt`, iterate the slice and write directly to the provided `Formatter` stream using `f.write_char()` or `f.write_str()`, bypassing intermediate buffer allocations entirely.

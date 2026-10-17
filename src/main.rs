@@ -180,22 +180,30 @@ fn draw_graph(data: &[f64], total_duration: f64) {
             }
         }
 
+        // ⚡ Bolt: Use a custom `Display` struct to eliminate the `String` heap allocation on every row.
+        struct TtyRowFormat<'a>(&'a [char]);
+        impl<'a> std::fmt::Display for TtyRowFormat<'a> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                use std::fmt::Write;
+                for &c in self.0 {
+                    if c == '*' {
+                        f.write_str("\x1b[1;36m*\x1b[0m")?;
+                    } else if c == '|' {
+                        f.write_str("\x1b[90m|\x1b[0m")?;
+                    } else {
+                        f.write_char(c)?;
+                    }
+                }
+                Ok(())
+            }
+        }
+
         for (r, row) in grid.iter().enumerate().take(height) {
             let val = max_v - (range_v * r as f64 / (height - 1) as f64);
-            let mut row_str = String::with_capacity(row.len() * 10);
-            for &c in row {
-                if c == '*' {
-                    row_str.push_str("\x1b[1;36m*\x1b[0m");
-                } else if c == '|' {
-                    row_str.push_str("\x1b[90m|\x1b[0m");
-                } else {
-                    row_str.push(c);
-                }
-            }
             println!(
                 "\x1b[1;35m{:>10}\x1b[0m \x1b[90m|\x1b[0m {}",
                 ByteFormat(val),
-                row_str
+                TtyRowFormat(row)
             );
         }
         println!(
@@ -229,10 +237,21 @@ fn draw_graph(data: &[f64], total_duration: f64) {
             }
         }
 
+        // ⚡ Bolt: Use a custom `Display` struct to eliminate the `String` heap allocation on every row.
+        struct RowFormat<'a>(&'a [char]);
+        impl<'a> std::fmt::Display for RowFormat<'a> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                use std::fmt::Write;
+                for &c in self.0 {
+                    f.write_char(c)?;
+                }
+                Ok(())
+            }
+        }
+
         for (r, row) in grid.iter().enumerate().take(height) {
             let val = max_v - (range_v * r as f64 / (height - 1) as f64);
-            let row_str: String = row.iter().collect();
-            println!("{:>10} | {}", ByteFormat(val), row_str);
+            println!("{:>10} | {}", ByteFormat(val), RowFormat(row));
         }
         println!("{} +{}", " ".repeat(11), "-".repeat(display_data.len()));
 
