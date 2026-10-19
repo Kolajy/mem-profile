@@ -65,3 +65,6 @@
 ## 2025-03-09 - Unicode Symbols for TUI Selection Indicators
 **Learning:** In TUI tables built with ratatui, ASCII character sequences like `>> ` used for selection/focus indicators can look unpolished and slightly harder to quickly parse than dedicated visual markers.
 **Action:** Replace ASCII character selection sequences with clean, visually distinct Unicode symbols like `▶ ` to improve visual polish, scannability, and align with modern UI standards.
+## 2025-03-09 - Ensure Leading Padding for TUI Empty States
+**Learning:** In TUI empty states ("No allocations tracked"), prepending a subtle \`ℹ\` icon improves visual scannability. However, directly pushing it can result in the icon hitting the border without padding.
+**Action:** When prepending Unicode icons to empty state messages or fallback UI text, include a leading space before the icon (e.g., \` ℹ Message\`) to provide visual padding against the left boundary of the UI block.

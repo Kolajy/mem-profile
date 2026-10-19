@@ -784,6 +784,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 .unwrap_or_default()
                 .as_millis();
             let idx = (t / 100) as usize % spinner.len();
+            app.empty_msg_buf.push(' ');
             app.empty_msg_buf.push_str(spinner[idx]);
             app.empty_msg_buf
                 .push_str(" ℹ Waiting for initial memory reading...");
@@ -1028,6 +1029,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
                 .unwrap_or_default()
                 .as_millis();
             let idx = (t / 100) as usize % spinner.len();
+            app.empty_msg_buf.push(' ');
             app.empty_msg_buf.push_str(spinner[idx]);
             app.empty_msg_buf
                 .push_str(" ℹ No allocations tracked. Waiting for data...");
