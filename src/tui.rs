@@ -776,7 +776,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
         app.empty_msg_buf.clear();
         if app.process_exited {
             app.empty_msg_buf
-                .push_str("ℹ No memory data collected (process ran too fast).");
+                .push_str(" ℹ No memory data collected (process ran too fast).");
         } else {
             let spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
             let t = std::time::SystemTime::now()
@@ -1019,7 +1019,7 @@ fn ui(f: &mut Frame, app: &mut App, items: &[(Arc<String>, usize, usize, String,
         app.empty_msg_buf.clear();
         let style = if app.process_exited {
             app.empty_msg_buf
-                .push_str("✓ Zero leaks detected. No active allocations.");
+                .push_str(" ✓ Zero leaks detected. No active allocations.");
             Style::default().fg(Color::Green)
         } else {
             let spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
