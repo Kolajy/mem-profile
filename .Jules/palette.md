@@ -68,3 +68,6 @@
 ## 2025-03-09 - Ensure Leading Padding for TUI Empty States
 **Learning:** In TUI empty states ("No allocations tracked"), prepending a subtle \`ℹ\` icon improves visual scannability. However, directly pushing it can result in the icon hitting the border without padding.
 **Action:** When prepending Unicode icons to empty state messages or fallback UI text, include a leading space before the icon (e.g., \` ℹ Message\`) to provide visual padding against the left boundary of the UI block.
+## 2025-03-09 - Success Empty States Formatting
+**Learning:** In CLI applications, empty states that signify success or "no issues found" (e.g., "Zero net differences detected", "Zero freed allocation paths") can blend in with standard output if they use neutral punctuation like hyphens (`-`).
+**Action:** When designing CLI empty success states, prepend them with a checkmark (`✓`) instead of a hyphen (`-`) to improve at-a-glance scannability and provide clear, reassuring visual feedback to the user, maintaining consistency with other successful states.

@@ -259,9 +259,9 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
 
     if net_differences.is_empty() {
         if is_tty {
-            println!("  \x1b[90m- Zero net differences detected.\x1b[0m");
+            println!("  \x1b[90m✓ Zero net differences detected.\x1b[0m");
         } else {
-            println!("  - Zero net differences detected.");
+            println!("  ✓ Zero net differences detected.");
         }
     } else {
         net_differences.sort_unstable_by_key(|&(_, size_diff, _)| -size_diff.abs());
@@ -356,9 +356,9 @@ pub fn diff_snapshots(path1: &str, path2: &str) {
     }
     if freed_paths.is_empty() {
         if is_tty {
-            println!("  \x1b[90m- Zero freed allocation paths.\x1b[0m");
+            println!("  \x1b[90m✓ Zero freed allocation paths.\x1b[0m");
         } else {
-            println!("  - Zero freed allocation paths.");
+            println!("  ✓ Zero freed allocation paths.");
         }
     } else {
         freed_paths.sort_unstable_by_key(|&(_, size, _)| -(size as isize));
