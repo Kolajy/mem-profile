@@ -71,3 +71,6 @@
 ## 2025-03-09 - Success Empty States Formatting
 **Learning:** In CLI applications, empty states that signify success or "no issues found" (e.g., "Zero net differences detected", "Zero freed allocation paths") can blend in with standard output if they use neutral punctuation like hyphens (`-`).
 **Action:** When designing CLI empty success states, prepend them with a checkmark (`✓`) instead of a hyphen (`-`) to improve at-a-glance scannability and provide clear, reassuring visual feedback to the user, maintaining consistency with other successful states.
+## 2025-03-09 - Unicode Icons for Keyboard Shortcut Labels
+**Learning:** In TUI applications, structural boilerplate text like "Keys:" in footers can blend in, even when dimmed. Prepending it with a universally understood keyboard Unicode icon (`⌨`) creates a strong visual anchor that helps users immediately parse the purpose of the section at a glance.
+**Action:** In TUI applications, improve the scannability of structural footer sections by prepending keyboard shortcut labels with a universally understood keyboard Unicode icon (e.g., ` ⌨ Keys:`).
