@@ -15,17 +15,18 @@ impl std::fmt::Display for SymbolInfo {
         // (like `.to_string()` or `.into_owned()`). This completely eliminates up to four
         // heap allocations per stack frame when generating memory profiles and flamegraphs.
         let name = self.name.as_deref().unwrap_or("<unknown>");
-        write!(f, "{} at ", name)?;
+        f.write_str(name)?;
+        f.write_str(" at ")?;
         if let Some(ref filename) = self.filename {
             write!(f, "{}", filename.display())?;
         } else {
-            write!(f, "<unknown>")?;
+            f.write_str("<unknown>")?;
         }
-        write!(f, ":")?;
+        f.write_str(":")?;
         if let Some(lineno) = self.lineno {
             write!(f, "{}", lineno)
         } else {
-            write!(f, "??")
+            f.write_str("??")
         }
     }
 }
