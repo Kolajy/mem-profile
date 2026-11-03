@@ -172,3 +172,6 @@
 ## 2026-10-18 - Avoid String Generation for Formatted Row Iteration
 **Learning:** Generating intermediate heap `String` allocations inside graph plotting loops (e.g. collecting a `Vec<char>` row to print using `println!("{}", row_str)`) forces severe dynamic allocation pressure when processing rendering loops.
 **Action:** Replace `String` collection with a custom wrapper struct implementing `std::fmt::Display` (e.g. `struct RowFormat<'a>(&'a [char])`). Inside `fmt`, iterate the slice and write directly to the provided `Formatter` stream using `f.write_char()` or `f.write_str()`, bypassing intermediate buffer allocations entirely.
+## 2026-10-25 - Avoid write! macro overhead for static strings
+**Learning:** Using the `write!` macro (e.g., `write!(f, "text")`) inside a `Display` implementation for simple string slices triggers the Rust format machinery, which parses the format string and constructs format arguments. In high-frequency hot paths (like stack symbol formatting), this introduces unnecessary CPU overhead compared to writing the string directly.
+**Action:** Replace `write!(f, "text")` with `f.write_str("text")` to bypass formatting overhead for static strings.
